@@ -2,6 +2,7 @@ from pptx import Presentation
 from docx import Document
 from imgurpython import ImgurClient
 import sys
+from utils import copy_unzip_docx, find_pic_in_docx
 
 def main(argv=None):
 
@@ -66,12 +67,14 @@ def main(argv=None):
         if len(para.text) > 150:
             report += para.text + "\n"
 
-    # Getting state is a bit hard, hard-coding for now
+    # Getting state is a bit hard, hard-coding for now - TODO
     state = "Kerala"
 
     # Prayer points are hard with the bullets - TODO
 
-    # Don't forget their profile picture! This will be pulled from Imgur when ready - TODO
+    # Don't forget their profile picture! Get this by unzipping the file - TODO
+    unzip_path = copy_unzip_docx(docx_path)
+    img_path = find_pic_in_docx(unzip_path)
 
     print "Enter path for master presentation template (will use Ben's default if blank)"
     path = raw_input()
@@ -137,7 +140,7 @@ def main(argv=None):
     profile_pic_holder = content_slide.placeholders[10]
 
     # Insert profile picture, need to access Imgur database!
-    # profile_pic_holder.insert_picture('my-image.png')
+    profile_pic_holder.insert_picture(img_path)
 
     # Insert India Map based off state name
     india_pic_holder = content_slide.placeholders[12]

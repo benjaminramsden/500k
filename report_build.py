@@ -1,6 +1,8 @@
 from pptx import Presentation
+from pptx.dml.color import RGBColor
 from docx import Document
 from imgurpython import ImgurClient
+from datetime import datetime
 import sys
 from utils import copy_unzip_docx, find_pic_in_docx
 
@@ -24,6 +26,13 @@ def main(argv=None):
     for para in doc.paragraphs:
         if para.text.startswith("Name"):
             name = para.text.split(":")[-1][1:]
+            break
+
+    for para in doc.paragraphs:
+        if para.text.startswith("Date of Birth"):
+            dob = para.text.split(":")[-1][1:].strip(" ")
+            d = datetime.strptime(dob, '%d/%m/%Y')
+            age = str(datetime.now().year - d.year)
             break
 
     for para in doc.paragraphs:
@@ -70,7 +79,16 @@ def main(argv=None):
     # Getting state is a bit hard, hard-coding for now - TODO
     state = "Kerala"
 
-    # Prayer points are hard with the bullets - TODO
+    # Prayer points are hard with the bullets
+    prayer = ""
+    for idx, para in enumerate(doc.paragraphs):
+        if para.text in ["Prayer Requests", "Prayer Points"]:
+            for line in doc.paragraphs[idx+1:]:
+                if line.text:
+                    prayer += line.text + "\n"
+
+    # Remove trailing return so we don't get extra bullet point
+    prayer.rstrip("\n")
 
     # Don't forget their profile picture! Get this by unzipping the file - TODO
     unzip_path = copy_unzip_docx(docx_path)
@@ -103,13 +121,15 @@ def main(argv=None):
     for shape in title_slide.placeholders:
         print('%d %s' % (shape.placeholder_format.idx, shape.name))
 
-    # Insert Missionary Name and ID
+    # Insert Missionary Name
     name_holder = title_slide.placeholders[0]
     assert name_holder.has_text_frame
     name_holder.text_frame.clear()
     p = name_holder.text_frame.paragraphs[0]
     run = p.add_run()
     run.text = name
+
+    # Insert Missionary ID - TODO
 
     # Access placeholders for content slides
     content_slide = prs.slides[1]
@@ -134,8 +154,33 @@ def main(argv=None):
     bio_holder.text_frame.clear()
     p = bio_holder.text_frame.paragraphs[0]
     run = p.add_run()
-    run.text = "Spouse: " + wife + "\n Children: " + children + "\n Languages:"\
-                + languages
+    run.text = "Age: "
+    run.font.bold = True
+    run.font.color.rgb = RGBColor(89, 89, 89)
+    run = p.add_run()
+    run.text = age
+    run.font.color.rgb = RGBColor(89, 89, 89)
+    run = p.add_run()
+    run.text = "\n Spouse: "
+    run.font.bold = True
+    run.font.color.rgb = RGBColor(89, 89, 89)
+    run = p.add_run()
+    run.text = wife
+    run.font.color.rgb = RGBColor(89, 89, 89)
+    run = p.add_run()
+    run.text = "\n Children: "
+    run.font.bold = True
+    run.font.color.rgb = RGBColor(89, 89, 89)
+    run = p.add_run()
+    run.text = children
+    run.font.color.rgb = RGBColor(89, 89, 89)
+    run = p.add_run()
+    run.text = "\n Languages: "
+    run.font.bold = True
+    run.font.color.rgb = RGBColor(89, 89, 89)
+    run = p.add_run()
+    run.text = languages
+    run.font.color.rgb = RGBColor(89, 89, 89)
 
     profile_pic_holder = content_slide.placeholders[10]
 
@@ -176,7 +221,7 @@ def main(argv=None):
     prayer_b_holder.text_frame.clear()
     p = prayer_b_holder.text_frame.paragraphs[0]
     run = p.add_run()
-    run.text = "insert prayer points here"
+    run.text = prayer
 
     # Save the powerpoint
     prs.save('test.pptx')

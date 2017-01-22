@@ -18,8 +18,6 @@ def copy_unzip_docx(f_path):
 def find_pic_in_docx(directory):
     # Finds first pic from docx and returns path to image.
     for dirName, subdirList, fileList in os.walk(directory):
-        print('Found directory: %s' % dirName)
         for fname in fileList:
-            print('\t%s' % fname)
             if fname.lower().endswith(('.png', '.jpg', '.jpeg')):
                 return dirName + "\\" + fname

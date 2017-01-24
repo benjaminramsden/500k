@@ -1,19 +1,20 @@
 from pptx import Presentation
-from pptx.dml.color import RGBColor
 from docx import Document
 from imgurpython import ImgurClient
 from datetime import datetime
 import sys
-from utils import copy_unzip_docx, find_pic_in_docx
+from utils import copy_unzip_docx, find_pic_in_docx, bio_line
 
 def main(argv=None):
-
     # First attempt to get all the information we need out of the word doc
     print "What's the path to the report docx we are using?"
     docx_path = raw_input()
     if not docx_path:
         docx_path = "C:\Users\\br1\Dropbox\NCM\Reports, bills and Proposals\Ben Report Automation\AP 16 12  M Raj Kumar Rajan.docx"
     doc = Document(docx_path)
+
+    # Get the round and year out of the report filename - TODO
+
 
     # Time for info gathering, info we need:
     # - Name
@@ -71,13 +72,18 @@ def main(argv=None):
             prayer_nos += int(cell.text)
 
     # Finally retrieve the report and prayer points
+    # Also check before Prayer points wording - TODO
     report = ""
     for para in doc.paragraphs:
         if len(para.text) > 150:
             report += para.text + "\n"
 
     # Getting state is a bit hard, hard-coding for now - TODO
+    # Look at parent directory strip the state from the first two characters
+    # in the ID. Create a dictionary of two-letter abbreviations to state names
     state = "Kerala"
+
+    # Missionary ID, pull from parent directory in above - TODO
 
     # Prayer points are hard with the bullets
     prayer = ""
@@ -90,7 +96,7 @@ def main(argv=None):
     # Remove trailing return so we don't get extra bullet point
     prayer.rstrip("\n")
 
-    # Don't forget their profile picture! Get this by unzipping the file - TODO
+    # Don't forget their profile picture! Get this by unzipping the file
     unzip_path = copy_unzip_docx(docx_path)
     img_path = find_pic_in_docx(unzip_path)
 
@@ -153,34 +159,10 @@ def main(argv=None):
     assert bio_holder.has_text_frame
     bio_holder.text_frame.clear()
     p = bio_holder.text_frame.paragraphs[0]
-    run = p.add_run()
-    run.text = "Age: "
-    run.font.bold = True
-    run.font.color.rgb = RGBColor(89, 89, 89)
-    run = p.add_run()
-    run.text = age
-    run.font.color.rgb = RGBColor(89, 89, 89)
-    run = p.add_run()
-    run.text = "\n Spouse: "
-    run.font.bold = True
-    run.font.color.rgb = RGBColor(89, 89, 89)
-    run = p.add_run()
-    run.text = wife
-    run.font.color.rgb = RGBColor(89, 89, 89)
-    run = p.add_run()
-    run.text = "\n Children: "
-    run.font.bold = True
-    run.font.color.rgb = RGBColor(89, 89, 89)
-    run = p.add_run()
-    run.text = children
-    run.font.color.rgb = RGBColor(89, 89, 89)
-    run = p.add_run()
-    run.text = "\n Languages: "
-    run.font.bold = True
-    run.font.color.rgb = RGBColor(89, 89, 89)
-    run = p.add_run()
-    run.text = languages
-    run.font.color.rgb = RGBColor(89, 89, 89)
+    bio_line("Age: ", age, p)
+    bio_line("\n Spouse: ", wife, p)
+    bio_line("\n Children: ", children, p)
+    bio_line("\n Languages: ", languages, p)
 
     profile_pic_holder = content_slide.placeholders[10]
 

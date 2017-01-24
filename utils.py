@@ -2,6 +2,7 @@
 import os
 import zipfile
 from shutil import copyfile
+from pptx.dml.color import RGBColor
 
 def copy_unzip_docx(f_path):
   # Copy docx and change file extension to *.zip
@@ -21,3 +22,15 @@ def find_pic_in_docx(directory):
         for fname in fileList:
             if fname.lower().endswith(('.png', '.jpg', '.jpeg')):
                 return dirName + "\\" + fname
+
+# Create a function to commonize the basic info extraction - TODO
+
+# Formatting for bio lines
+def bio_line(category, text, placeholder):
+    run = placeholder.add_run()
+    run.text = category
+    run.font.bold = True
+    run.font.color.rgb = RGBColor(89, 89, 89)
+    run = placeholder.add_run()
+    run.text = text
+    run.font.color.rgb = RGBColor(89, 89, 89)

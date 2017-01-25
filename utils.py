@@ -12,7 +12,7 @@ def copy_unzip_docx(f_path):
   # unzip docx (now zip) file
   dir_path = f_path.rsplit("\\",1)[0]
   zip_ref = zipfile.ZipFile(f_path_zip, 'r')
-  zip_ref.extractall(f_path.rsplit(".",1)[0])
+  zip_ref.extractall(f_path.rsplit(".",1)[0] + "_zip")
   zip_ref.close()
   return dir_path
 

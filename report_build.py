@@ -10,7 +10,7 @@ def main(argv=None):
     print "What's the path to the report docx we are using?"
     docx_path = raw_input()
     if not docx_path:
-        docx_path = "C:\Users\\br1\Dropbox\NCM\Reports, bills and Proposals\Ben Report Automation\AP 16 12  M Raj Kumar Rajan KL1234.docx"
+        docx_path = "C:\Users\\br1\Dropbox\NCM\Reports, bills and Proposals\Ben Report Automation\AP 16 12  M Raj Kumar Rajan KL1234\AP 16 12  M Raj Kumar Rajan KL1234.docx"
     doc = Document(docx_path)
 
     # Get the round and year out of the report filename - TODO
@@ -69,7 +69,7 @@ def main(argv=None):
     # Look at parent directory strip the state from the first two characters
     # in the ID. Create a dictionary of two-letter abbreviations to state names
     parent_dir = docx_path.split("\\")[-2]
-    miss_id = parent_dir[-6]
+    miss_id = "Missionary ID: " + parent_dir[-6:]
     state = parent_dir[-6:-4]
 
     # Use a dictionary to convert the two-letter state acronym to full name - TODO
@@ -110,7 +110,6 @@ def main(argv=None):
         # prs.slides.add_slide(slide_layouts[0])
 
     # Access placeholders for Title slide
-
     title_slide = prs.slides[0]
 
     for shape in title_slide.placeholders:
@@ -124,7 +123,13 @@ def main(argv=None):
     run = p.add_run()
     run.text = name
 
-    # Insert Missionary ID - TODO
+    # Insert Missionary ID
+    miss_id_holder = title_slide.placeholders[11]
+    assert miss_id_holder.has_text_frame
+    miss_id_holder.text_frame.clear()
+    p = miss_id_holder.text_frame.paragraphs[0]
+    run = p.add_run()
+    run.text = miss_id
 
     # Access placeholders for content slides
     content_slide = prs.slides[1]
@@ -159,7 +164,7 @@ def main(argv=None):
     profile_pic_holder.insert_picture(img_path)
 
     # Insert India Map based off state name
-    #india_pic_holder = content_slide.placeholders[12]
+    india_pic_holder = content_slide.placeholders[12]
     #india_pic_holder.insert_picture('C:\Users\\br1\Dropbox\NCM\Reports, bills and Proposals\Ben Report Automation\Map images\\' + state.lower() + '.png')
 
     # Report title
@@ -200,7 +205,7 @@ def main(argv=None):
     # Tidy up unzipped word doc and .zip file
     try:
         os.remove(docx_path.split(".")[0] + ".zip")
-        shutil.rmtree(docx_path.split(".")[0])
+        shutil.rmtree(docx_path.split(".")[0] + "_zip")
     except:
         print "Couldn't remove either zip file or directory"
 

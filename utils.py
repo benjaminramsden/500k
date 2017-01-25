@@ -23,8 +23,6 @@ def find_pic_in_docx(directory):
             if fname.lower().endswith(('.png', '.jpg', '.jpeg')):
                 return dirName + "\\" + fname
 
-# Create a function to commonize the basic info extraction - TODO
-
 # Formatting for bio lines
 def bio_line(category, text, placeholder):
     run = placeholder.add_run()

@@ -10,11 +10,11 @@ def main(argv=None):
     print "What's the path to the report docx we are using?"
     docx_path = raw_input()
     if not docx_path:
-        docx_path = "C:\Users\\br1\Dropbox\NCM\Reports, bills and Proposals\Ben Report Automation\AP 16 12  M Raj Kumar Rajan.docx"
+        docx_path = "C:\Users\\br1\Dropbox\NCM\Reports, bills and Proposals\Ben Report Automation\AP 16 12  M Raj Kumar Rajan KL1234.docx"
     doc = Document(docx_path)
 
     # Get the round and year out of the report filename - TODO
-
+    # The format of this is not clear yet...
 
     # Time for info gathering, info we need:
     # - Name
@@ -25,37 +25,24 @@ def main(argv=None):
 
     # Standard bio info
     for para in doc.paragraphs:
-        if para.text.startswith("Name"):
+        if para.text.startswith("Name") and not para.text.startswith("Name of"):
             name = para.text.split(":")[-1][1:]
-            break
-
-    for para in doc.paragraphs:
-        if para.text.startswith("Date of Birth"):
+        elif para.text.startswith("Date of Birth"):
             dob = para.text.split(":")[-1][1:].strip(" ")
             d = datetime.strptime(dob, '%d/%m/%Y')
             age = str(datetime.now().year - d.year)
-            break
-
-    for para in doc.paragraphs:
-        if para.text.startswith("Wife"):
+        elif para.text.startswith("Wife"):
             wife = para.text.split(":")[-1][1:]
             if wife.isspace():
                 wife = "None"
-            break
-
-    for para in doc.paragraphs:
-        if para.text.startswith("Children"):
+        elif para.text.startswith("Children"):
             children = para.text.split(":")[-1][1:]
             if children.isspace():
                 children = "None"
-            break
-
-    for para in doc.paragraphs:
-        if para.text.startswith("Languages"):
+        elif para.text.startswith("Languages"):
             languages = para.text.split(":")[-1][1:]
             if languages.isspace():
                 languages = "None"
-            break
 
     # Info on number of churches and baptisms
     churches = 0
@@ -72,18 +59,20 @@ def main(argv=None):
             prayer_nos += int(cell.text)
 
     # Finally retrieve the report and prayer points
-    # Also check before Prayer points wording - TODO
     report = ""
-    for para in doc.paragraphs:
-        if len(para.text) > 150:
-            report += para.text + "\n"
+    for idx, para in enumerate(doc.paragraphs):
+        if para.text in ["Prayer Requests", "Prayer Points"]:
+            for para in doc.paragraphs[:idx]:
+                if len(para.text) > 150:
+                    report += para.text + "\n"
 
-    # Getting state is a bit hard, hard-coding for now - TODO
     # Look at parent directory strip the state from the first two characters
     # in the ID. Create a dictionary of two-letter abbreviations to state names
-    state = "Kerala"
+    parent_dir = docx_path.split("\\")[-2]
+    miss_id = parent_dir[-6]
+    state = parent_dir[-6:-4]
 
-    # Missionary ID, pull from parent directory in above - TODO
+    # Use a dictionary to convert the two-letter state acronym to full name - TODO
 
     # Prayer points are hard with the bullets
     prayer = ""
@@ -170,8 +159,8 @@ def main(argv=None):
     profile_pic_holder.insert_picture(img_path)
 
     # Insert India Map based off state name
-    india_pic_holder = content_slide.placeholders[12]
-    india_pic_holder.insert_picture('C:\Users\\br1\Dropbox\NCM\Reports, bills and Proposals\Ben Report Automation\Map images\\' + state.lower() + '.png')
+    #india_pic_holder = content_slide.placeholders[12]
+    #india_pic_holder.insert_picture('C:\Users\\br1\Dropbox\NCM\Reports, bills and Proposals\Ben Report Automation\Map images\\' + state.lower() + '.png')
 
     # Report title
     title_holder = content_slide.placeholders[0]
@@ -207,6 +196,12 @@ def main(argv=None):
 
     # Save the powerpoint
     prs.save('test.pptx')
+
+    # Tidy up unzipped word doc and .zip file - TODO
+    try:
+        pass
+    finally:
+        pass
 
 if __name__ == '__main__':
     status = main()

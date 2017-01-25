@@ -2,7 +2,7 @@ from pptx import Presentation
 from docx import Document
 from imgurpython import ImgurClient
 from datetime import datetime
-import sys
+import sys, os, shutil
 from utils import copy_unzip_docx, find_pic_in_docx, bio_line
 
 def main(argv=None):
@@ -197,11 +197,12 @@ def main(argv=None):
     # Save the powerpoint
     prs.save('test.pptx')
 
-    # Tidy up unzipped word doc and .zip file - TODO
+    # Tidy up unzipped word doc and .zip file
     try:
-        pass
-    finally:
-        pass
+        os.remove(docx_path.split(".")[0] + ".zip")
+        shutil.rmtree(docx_path.split(".")[0])
+    except:
+        print "Couldn't remove either zip file or directory"
 
 if __name__ == '__main__':
     status = main()

@@ -70,9 +70,29 @@ def main(argv=None):
     # in the ID. Create a dictionary of two-letter abbreviations to state names
     parent_dir = docx_path.split("\\")[-2]
     miss_id = "Missionary ID: " + parent_dir[-6:]
-    state = parent_dir[-6:-4]
+    state_ab = parent_dir[-6:-4]
 
-    # Use a dictionary to convert the two-letter state acronym to full name - TODO
+    # Use a dictionary to convert the two-letter state acronym to full name
+    state_dict = {"AN": "Andaman Nicobar",
+                  "AP": "Andhra Pradesh",
+                  "AS": "Assam",
+                  "CH": "Chhattisgarh",
+                  "HR": "Haryana",
+                  "GJ": "Gujarat",
+                  "HP": "Himachal Pradesh",
+                  "JK": "Jammu & Kashmir",
+                  "KA": "Karnataka",
+                  "KL": "Kerala",
+                  "MP": "Madhya Pradesh",
+                  "MH": "Maharashtra",
+                  "OR": "Odisha (Orissa)",
+                  "PB": "Punjab",
+                  "RJ": "Rajasthan",
+                  "TN": "Tamil Nadu",
+                  "TA": "Telangana",
+                  "TR": "Tripura",
+                  "UP": "Uttar Pradesh",
+                  "UK": "Uttarakhand"}
 
     # Prayer points are hard with the bullets
     prayer = ""
@@ -140,7 +160,7 @@ def main(argv=None):
     state_holder.text_frame.clear()
     p = state_holder.text_frame.paragraphs[0]
     run = p.add_run()
-    run.text = "State: " + state
+    run.text = "State: " + state_dict{state_ab}
 
     name_holder = content_slide.placeholders[13]
     assert name_holder.has_text_frame

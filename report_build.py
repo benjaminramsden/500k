@@ -29,7 +29,10 @@ def main(argv=None):
             name = para.text.split(":")[-1][1:]
         elif para.text.startswith("Date of Birth"):
             dob = para.text.split(":")[-1][1:].strip(" ")
-            d = datetime.strptime(dob, '%d/%m/%Y')
+            try:
+                d = datetime.strptime(dob, '%d/%m/%Y')
+            except:
+                d = datetime.strptime(dob, '%d-%m-%Y')
             age = str(datetime.now().year - d.year)
         elif para.text.startswith("Wife"):
             wife = para.text.split(":")[-1][1:]
@@ -51,26 +54,41 @@ def main(argv=None):
 
     for cell in doc.tables[0].column_cells(3)[1:]:
         if cell.text:
-            baptisms += int(cell.text)
+            try:
+                baptisms += int(cell.text)
+            except ValueError:
+                pass
             churches += 1
 
     for cell in doc.tables[0].column_cells(2)[1:]:
         if cell.text:
-            prayer_nos += int(cell.text)
+            try:
+                prayer_nos += int(cell.text)
+            except ValueError:
+                pass
 
     # Finally retrieve the report and prayer points
     report = ""
+    prayer = ""
     for idx, para in enumerate(doc.paragraphs):
-        if para.text in ["Prayer Requests", "Prayer Points"]:
+        if para.text.lower() in ["prayer requests", "prayer points"]:
+            for line in doc.paragraphs[idx+1:]:
+                if line.text:
+                    prayer += line.text + "\n"
             for para in doc.paragraphs[:idx]:
                 if len(para.text) > 150:
                     report += para.text + "\n"
+    print "Prayer: " + prayer
 
     # Look at parent directory strip the state from the first two characters
     # in the ID. Create a dictionary of two-letter abbreviations to state names
     parent_dir = docx_path.split("\\")[-2]
-    miss_id = "Missionary ID: " + parent_dir[-6:]
-    state_ab = parent_dir[-6:-4]
+    if parent_dir[-6:].isupper():
+        miss_id = "Missionary ID: " + parent_dir[-6:]
+    else:
+        miss_id = ""
+    state_ab = docx_path.split("\\")[-1][:2]
+    print state_ab
 
     # Use a dictionary to convert the two-letter state acronym to full name
     state_dict = {"AN": "Andaman Nicobar",
@@ -94,17 +112,6 @@ def main(argv=None):
                   "UP": "Uttar Pradesh",
                   "UK": "Uttarakhand"}
 
-    # Prayer points are hard with the bullets
-    prayer = ""
-    for idx, para in enumerate(doc.paragraphs):
-        if para.text in ["Prayer Requests", "Prayer Points"]:
-            for line in doc.paragraphs[idx+1:]:
-                if line.text:
-                    prayer += line.text + "\n"
-
-    # Remove trailing return so we don't get extra bullet point
-    prayer.rstrip("\n")
-
     # Don't forget their profile picture! Get this by unzipping the file
     unzip_path = copy_unzip_docx(docx_path)
     img_path = find_pic_in_docx(unzip_path)
@@ -117,14 +124,14 @@ def main(argv=None):
     # Import presentation
     prs = Presentation(path + "Master Report Template.pptx")
 
-    # Add extra report slides based on available number
-    print "How many reports are there to put together?"
-    report_no = raw_input()
+    # Add extra report slides based on available number - TODO
+    # print "How many reports are there to put together?"
+    # report_no = raw_input()
 
-    if int(report_no) > 1:
+    #if int(report_no) > 1:
         # Create new slides for each other report to add, make sure to insert same
         # placeholders
-        new_slides = report_no -1
+        # new_slides = report_no -1
 
         # Not tested!!
         # prs.slides.add_slide(slide_layouts[0])
@@ -160,7 +167,7 @@ def main(argv=None):
     state_holder.text_frame.clear()
     p = state_holder.text_frame.paragraphs[0]
     run = p.add_run()
-    run.text = "State: " + state_dict{state_ab}
+    run.text = "State: " + state_dict[state_ab]
 
     name_holder = content_slide.placeholders[13]
     assert name_holder.has_text_frame
@@ -185,7 +192,9 @@ def main(argv=None):
 
     # Insert India Map based off state name
     india_pic_holder = content_slide.placeholders[12]
-    #india_pic_holder.insert_picture('C:\Users\\br1\Dropbox\NCM\Reports, bills and Proposals\Ben Report Automation\Map images\\' + state.lower() + '.png')
+    india_pic_holder.insert_picture('C:\Users\\br1\Dropbox\NCM\Reports, ' +
+        'bills and Proposals\!Reporting Workflow\Map Images\\' +
+        state_dict[state_ab] + '.png')
 
     # Report title
     title_holder = content_slide.placeholders[0]
@@ -220,7 +229,9 @@ def main(argv=None):
     run.text = prayer
 
     # Save the powerpoint
-    prs.save('test.pptx')
+    print "Where should this report be saved? (Will use default staging area if none.)"
+    save_path = raw_input()
+    prs.save(save_path + docx_path.split("\\")[-1].split(".")[0] + ".pptx")
 
     # Tidy up unzipped word doc and .zip file
     try:

@@ -3,6 +3,7 @@ import os
 import zipfile
 from shutil import copyfile
 from pptx.dml.color import RGBColor
+import comtypes.client
 
 def copy_unzip_docx(f_path):
   # Copy docx and change file extension to *.zip
@@ -32,3 +33,13 @@ def bio_line(category, text, placeholder):
     run = placeholder.add_run()
     run.text = text
     run.font.color.rgb = RGBColor(89, 89, 89)
+
+def PPTtoPDF(inputFileName, outputFileName, formatType = 32):
+    powerpoint = comtypes.client.CreateObject("Powerpoint.Application")
+    powerpoint.Visible = 1
+    if outputFileName[-3:] != 'pdf':
+        outputFileName = outputFileName + ".pdf"
+    deck = powerpoint.Presentations.Open(inputFileName)
+    deck.SaveAs(outputFileName, formatType) # formatType = 32 for ppt to pdf
+    deck.Close()
+    powerpoint.Quit()

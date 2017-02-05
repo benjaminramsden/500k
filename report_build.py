@@ -3,7 +3,7 @@ from docx import Document
 from imgurpython import ImgurClient
 from datetime import datetime
 import sys, os, shutil
-from utils import copy_unzip_docx, find_pic_in_docx, bio_line
+from utils import copy_unzip_docx, find_pic_in_docx, bio_line, PPTtoPDF
 
 def main(argv=None):
     # First attempt to get all the information we need out of the word doc
@@ -24,15 +24,25 @@ def main(argv=None):
     # - Prayer Points
 
     # Standard bio info
+    name = ""
+    age = ""
+    wife = ""
+    children = ""
+    languages = ""
     for para in doc.paragraphs:
-        if para.text.startswith("Name") and not para.text.startswith("Name of"):
+        if (para.text.startswith("Name") and not para.text.startswith("Name of")
+            and not para.text.startswith("Names")):
             name = para.text.split(":")[-1][1:]
         elif para.text.startswith("Date of Birth"):
             dob = para.text.split(":")[-1][1:].strip(" ")
             try:
                 d = datetime.strptime(dob, '%d/%m/%Y')
             except:
-                d = datetime.strptime(dob, '%d-%m-%Y')
+                try:
+                    d = datetime.strptime(dob, '%d-%m-%Y')
+                except:
+                    age = "None"
+                    continue
             age = str(datetime.now().year - d.year)
         elif para.text.startswith("Wife"):
             wife = para.text.split(":")[-1][1:]
@@ -71,14 +81,23 @@ def main(argv=None):
     report = ""
     prayer = ""
     for idx, para in enumerate(doc.paragraphs):
-        if para.text.lower() in ["prayer requests", "prayer points"]:
+        if para.text.lower() in ["prayer requests",
+                                 "prayer points",
+                                 "prayer requests:",
+                                 "prayer points:"]:
+            # Any lines after this are prayer points
             for line in doc.paragraphs[idx+1:]:
                 if line.text:
                     prayer += line.text + "\n"
+            # Any lines before will be the report, as long as they're long
             for para in doc.paragraphs[:idx]:
                 if len(para.text) > 150:
                     report += para.text + "\n"
-    print "Prayer: " + prayer
+    if not report:
+        # Do manual pull out of prayer points but do put in the report
+        for para in doc.paragraphs:
+            if len(para.text) > 150:
+                report += para.text + "\n"
 
     # Look at parent directory strip the state from the first two characters
     # in the ID. Create a dictionary of two-letter abbreviations to state names
@@ -181,9 +200,15 @@ def main(argv=None):
     bio_holder.text_frame.clear()
     p = bio_holder.text_frame.paragraphs[0]
     bio_line("Age: ", age, p)
-    bio_line("\n Spouse: ", wife, p)
-    bio_line("\n Children: ", children, p)
-    bio_line("\n Languages: ", languages, p)
+    if wife:
+        bio_line("\n Spouse: ", wife, p)
+    if children:
+        bio_line("\n Children: ", children, p)
+    if languages:
+        bio_line("\n Languages: ", languages, p)
+    bio_line("\n Churches: ", str(churches), p)
+    bio_line("\n Coming for Prayer: ", str(prayer_nos), p)
+    bio_line("\n Baptisms: ", str(baptisms), p)
 
     profile_pic_holder = content_slide.placeholders[10]
 
@@ -202,7 +227,7 @@ def main(argv=None):
     title_holder.text_frame.clear()
     p = title_holder.text_frame.paragraphs[0]
     run = p.add_run()
-    run.text = "Report - <Year> Report <round>"
+    run.text = "<Year> Report <round>"
 
     # Actual report!
     report_holder = content_slide.placeholders[14]
@@ -231,7 +256,11 @@ def main(argv=None):
     # Save the powerpoint
     print "Where should this report be saved? (Will use default staging area if none.)"
     save_path = raw_input()
-    prs.save(save_path + docx_path.split("\\")[-1].split(".")[0] + ".pptx")
+    save_name = docx_path.split("\\")[-1].split(".")[0]
+    prs.save(save_path + save_name + ".pptx")
+
+    # Export to pdf
+    PPTtoPDF(save_path + save_name + ".pptx", save_path + save_name + ".pdf")
 
     # Tidy up unzipped word doc and .zip file
     try:

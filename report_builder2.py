@@ -22,6 +22,18 @@ def main(argv=None):
     # where each list is a row of cells.
     values = get_all_missionary_reports()
 
+    all_dict = construct_data(values)
+
+    # Time to create the presentations, loop around for every single missionary
+    # TODO - In future make sure only missionaries with new reports get
+    # generated
+    for miss_id,miss_dict in all_dict:
+        pptx = create_powerpoint(miss_id,miss_dict)
+
+        # Export to pdf
+        PPTtoPDF(pptx, pptx.split(".")[0] + ".pdf")
+
+def construct_data(values):
     # For all the missionaries, arrange data in this structure:
     # All
     #  -> Missionary 1 (based on ID)
@@ -42,41 +54,34 @@ def main(argv=None):
     #   ...
     all_dict = dict()
     for row in values:
-        report = dict("Date":         row[0],
-                      "Subject":      row[1],
-                      "Raw":          row[2],
-                      "Submitter":    row[3],
-                      "Missionary":   row[4],
-                      "Missionary ID":row[5],
-                      "Report":       row[39],
-                      )
-        for i,village in enumerate(row[6:3:24]):
+        report = {"Date":         row[0],
+                  "Subject":      row[1],
+                  "Raw":          row[3],
+                  "Submitter":    row[4],
+                  "Email":        row[5],
+                  "Missionary":   row[6],
+                  "Missionary ID":row[7],
+                  "Report":       row[40],
+                 }
+        for i,village in enumerate(row[8:3:26]):
             if not village.isempty():
-                vill_dict = dict(
+                vill_dict = {
                     "Village": row[i+6],
                     "People":  row[i+7],
                     "Baptisms":row[i+8],
-                )
+                }
                 report['Village '+str(i+1)] = vill_dict
-        for i,prayer in enumerate(row[40:47]):
-            if not prayer.isempty()
+        for i,prayer in enumerate(row[41:48]):
+            if not prayer.isempty():
                 report['Prayer '+str(i+1)] = prayer
-        if row[5] in all_dict:
+        if report["Missionary ID"] in all_dict.keys():
             # Missionary already exists, add report to missionary dictionary
-            miss_dict = all_dict[row[5]]
-            miss_dict[row[0]] = report
+            miss_dict = all_dict[report["Missionary ID"]]
+            miss_dict[report["Date"]] = report
         else:
             # New missionary, create new dictionary and add report to it.
-            all_dict[row[5]] = dict(row[0]: report)
-
-    # Time to create the presentations, loop around for every single missionary
-    # TODO - In future make sure only missionaries with new reports get
-    # generated
-    for miss_id,miss_dict in all_dict:
-        pptx = create_powerpoint(miss_id,miss_dict)
-
-        # Export to pdf
-        PPTtoPDF(pptx, pptx.split(".")[0] + ".pdf")
+            all_dict[report["Missionary ID"]] = {
+                report["Missionary ID"]: report}
 
 def create_powerpoint(miss_id,miss_dict):
     # Import presentation
@@ -95,7 +100,7 @@ def create_powerpoint(miss_id,miss_dict):
     name_holder.text_frame.clear()
     p = name_holder.text_frame.paragraphs[0]
     run = p.add_run()
-    run.text = miss_dict[]
+    run.text = miss_dict["Missionary"]
 
     # Insert Missionary ID
     miss_id_holder = title_slide.placeholders[11]

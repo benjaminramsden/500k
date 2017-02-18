@@ -43,3 +43,8 @@ def PPTtoPDF(inputFileName, outputFileName, formatType = 32):
     deck.SaveAs(outputFileName, formatType) # formatType = 32 for ppt to pdf
     deck.Close()
     powerpoint.Quit()
+
+def build_slide(prs):
+    # Call the standard template for the report slides
+    slide_layout = prs.slide_layouts[SLD_LAYOUT_TITLE_AND_CONTENT]
+    slide = prs.slides.add_slide(slide_layout)

@@ -3,11 +3,11 @@ from docx import Document
 from imgurpython import ImgurClient
 from datetime import datetime
 import sys, os, shutil
-from utils import copy_unzip_docx, find_pic_in_docx, bio_line, PPTtoPDF
+from utils import *
 
 def main(argv=None):
-    # First attempt to get all the information we need out of the word doc
-    print "What's the path to the report docx we are using?"
+    # Get the first report document in the folder
+    print "What's the path to the first report docx we are using?"
     docx_path = raw_input()
     if not docx_path:
         docx_path = "C:\Users\\br1\Dropbox\NCM\Reports, bills and Proposals\Ben Report Automation\AP 16 12  M Raj Kumar Rajan KL1234\AP 16 12  M Raj Kumar Rajan KL1234.docx"
@@ -77,7 +77,8 @@ def main(argv=None):
             except ValueError:
                 pass
 
-    # Finally retrieve the report and prayer points
+    # For each report in the folder, grab the report and prayer points
+    # Loop for each report - TODO
     report = ""
     prayer = ""
     for idx, para in enumerate(doc.paragraphs):

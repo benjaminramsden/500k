@@ -94,7 +94,7 @@ def upload_report(pdf_path):
                                         fields='id').execute()
 
     drive_url = 'https://www.googleapis.com/drive/v3/files/'
-    return file_url = drive_url + file.get('id')
+    return drive_url + file.get('id')
 
 # When report is generated and uploaded to Google Drive, this will put the
 # URL of the report PDF into the spreadsheet.

@@ -236,7 +236,7 @@ def enter_report_title(report, slide):
     title_holder.text_frame.clear()
     p = title_holder.text_frame.paragraphs[0]
     run = p.add_run()
-    run.text = year + " Report " + report_round
+    run.text = year + " Report " + report_round.split("/")[0]
 
 def get_report_round(timestamp):
     date = datetime.strptime(timestamp, '%Y-%m-%d %H:%M:%S')
@@ -245,7 +245,7 @@ def get_report_round(timestamp):
     elif date.month in range(5,9):
         report_round = "2/"+str(date.year)
     elif date.month in range(9,13):
-        report_round = "3"+str(date.year)
+        report_round = "3/"+str(date.year)
     else:
         report_round = "ERROR"
     return report_round

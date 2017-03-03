@@ -2,7 +2,7 @@ from pptx import Presentation
 from docx import Document
 from imgurpython import ImgurClient
 from datetime import datetime
-import sys, os, shutil
+import sys, os, shutil, re
 from utils import *
 from sheets_api import *
 
@@ -27,11 +27,16 @@ def main(argv=None):
     # Time to create the presentations, loop around for every single missionary
     # TODO - In future make sure only missionaries with new reports get
     # generated
-    for miss_dict in all_dict.itervalues():
+    for miss_id,miss_dict in all_dict.iteritems():
         pptx = create_powerpoint(miss_dict)
 
         # Export to pdf
-        PPTtoPDF(pptx, pptx.split(".")[0] + ".pdf")
+        if pptx:
+            PPTtoPDF(pptx, pptx.split(".")[0] + ".pdf")
+        else:
+            print "Build failed for missionary with ID:" + miss_id
+
+    return 0
 
 def construct_data(values):
     # For all the missionaries, arrange data in this structure:
@@ -105,7 +110,9 @@ def create_powerpoint(miss_dict):
         counter+=1
 
     # TODO - Save the powerpoint in a folder with Missionary ID - discuss with Alex
-    path = "C:\Users\\br1\Code\\500k\\test.pptx"
+    path = "C:\Users\\br1\Code\\500k\\{0}_{1}.pptx".format(
+        report["Missionary ID"],
+        report["Missionary"])
     prs.save(path)
     return path
 
@@ -127,7 +134,7 @@ def create_title_slide(prs,report):
     miss_id_holder.text_frame.clear()
     p = miss_id_holder.text_frame.paragraphs[0]
     run = p.add_run()
-    run.text = report["Missionary ID"]
+    run.text = "Missionary ID: " + report["Missionary ID"]
 
     # Insert current year
     miss_id_holder = title_slide.placeholders[1]
@@ -140,11 +147,12 @@ def create_title_slide(prs,report):
     return prs
 
 def insert_bio(slide,report):
-    # Get totals for churches, baptisms and prayer
-    for k, value in report_dict:
-        # Only villages are nested dictionaries, so test on value is dictionary
-        if isinstance(value, dict):
-            pass
+    # TODO - Get totals for churches, baptisms and prayer
+    #for k, value in report:
+    #    # Only villages are nested dictionaries, so test on value is dictionary
+    #    # BLEURGH
+    #    if isinstance(value, dict):
+    #        pass
 
     # Define the state acronyms here, this could be moved out at a later date
     state_dict = {"AN": "Andaman Nicobar",
@@ -168,13 +176,19 @@ def insert_bio(slide,report):
                   "UP": "Uttar Pradesh",
                   "UK": "Uttarakhand"}
 
+    state_ab = report["Missionary ID"][:2]
     # Insert state
     state_holder = slide.placeholders[2]
     assert state_holder.has_text_frame
     state_holder.text_frame.clear()
     p = state_holder.text_frame.paragraphs[0]
     run = p.add_run()
-    run.text = "State: " + state_dict[report["Missionary ID"][:2]]
+    try:
+        run.text = "State: " + state_dict[state_ab]
+    except KeyError:
+        print("Report dated {0} for missionary {1} has incorrect Missionary "
+            "ID, chase Shijo".format(report["Date"],report["Missionary"]))
+        return 1
 
     # Insert India Map based off state name
     india_pic_holder = slide.placeholders[12]
@@ -194,13 +208,15 @@ def insert_bio(slide,report):
     assert bio_holder.has_text_frame
     bio_holder.text_frame.clear()
     p = bio_holder.text_frame.paragraphs[0]
-    bio_line("\n Churches: ", str(churches), p)
-    bio_line("\n Coming for Prayer: ", str(prayer_nos), p)
-    bio_line("\n Baptisms: ", str(baptisms), p)
+    # TODO - get these numbers out above
+    #bio_line("\n Churches: ", str(churches), p)
+    #bio_line("\n Coming for Prayer: ", str(prayer_nos), p)
+    #bio_line("\n Baptisms: ", str(baptisms), p)
 
     profile_pic_holder = slide.placeholders[10]
 
-    get_bio_from_factfile(slide,report["Missionary ID"])
+    # get_bio_from_factfile(slide,report["Missionary ID"])
+    return
 
 def get_bio_from_factfile(slide,miss_id):
     # Pull down info for missionary based off missionary ID from factfile sheet
@@ -240,20 +256,22 @@ def build_report_slide(prs,report):
 
     for shape in content_slide.placeholders:
         print('%d %s' % (shape.placeholder_format.idx, shape.name))
-    # TODO - there is no bio info in the webform, gather from initial
-    # applications into a webform
-    #insert_bio(content_slide, report)
+
+    # Add biography, mainly from factfile
+    success = insert_bio(content_slide, report)
 
     # Report title - pull report round out of date
     enter_report_title(report,content_slide)
 
-    # Actual report!
+    # Actual report! Tidy up regex hacks
+    body = report["Report"].replace(">>> ","\n")
+    body = re.sub('[ \t\f\v+]', ' ', body)
     report_holder = content_slide.placeholders[14]
     assert report_holder.has_text_frame
     report_holder.text_frame.clear()
     p = report_holder.text_frame.paragraphs[0]
     run = p.add_run()
-    run.text = report["Report"]
+    run.text = body.rstrip()
 
     # Prayer heading
     prayer_h_holder = content_slide.placeholders[15]
@@ -270,6 +288,8 @@ def build_report_slide(prs,report):
     p = prayer_b_holder.text_frame.paragraphs[0]
     run = p.add_run()
     run.text = report["Prayer 1"]
+
+    return success
 
 if __name__ == '__main__':
     status = main()

@@ -59,7 +59,7 @@ def get_all_missionary_reports():
                               discoveryServiceUrl=discoveryUrl)
 
     spreadsheetId = '1AR7akf5vREy8YpROIDBb_wQxCtGbhCLOJ6GweXxYZB8'
-    rangeName = 'Extractor!A:AV'
+    rangeName = 'Extractor!A3:BA1000'
     result = service.spreadsheets().values().get(
         spreadsheetId=spreadsheetId, range=rangeName).execute()
     values = result.get('values', [])
@@ -67,14 +67,6 @@ def get_all_missionary_reports():
         print('No data found.')
     else:
         return values
-
-# Based off the missionary ID, retrieve all rows related to that ID in the form
-# of a dict of dicts.
-def get_ind_missionary_reports(miss_id):
-    # Validate input
-    assert(len(miss_id) == 6)
-    assert(miss_id.isalnum())
-    assert(miss_id[:2] in state_dict)
 
 # Once the report in PDF format has been generated, upload to Google Drive
 def upload_report(pdf_path):
@@ -130,3 +122,22 @@ def write_url_to_sheet(url):
     result = service.spreadsheets().values().update(
         spreadsheetId=spreadsheet_id, range=range_name,
         valueInputOption=value_input_option, body=body).execute()
+
+def get_all_factfile_data():
+    # Log into Google and extract all column data.
+    credentials = get_credentials()
+    http = credentials.authorize(httplib2.Http())
+    discoveryUrl = ('https://sheets.googleapis.com/$discovery/rest?'
+                    'version=v4')
+    service = discovery.build('sheets', 'v4', http=http,
+                              discoveryServiceUrl=discoveryUrl)
+
+    spreadsheetId = '1bnI0Xh6UosI5SIQw3EUBByDgi9mFv-qYmd4g6LvKshA'
+    rangeName = 'Sheet1!A4:AD1000'
+    result = service.spreadsheets().values().get(
+        spreadsheetId=spreadsheetId, range=rangeName).execute()
+    values = result.get('values', [])
+    if not values:
+        print('No data found.')
+    else:
+        return values

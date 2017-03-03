@@ -91,10 +91,12 @@ def construct_data(values):
 def create_powerpoint(miss_dict):
     # Import presentation
     print "Opening powerpoint template"
-    path = "C:\Users\\br1\Dropbox\NCM\Reports, bills and Proposals\Ben Report Automation\\"
+    path = "C:\Users\\br1\Dropbox\NCM\Reports\Ben Report Automation\\"
     prs = Presentation(path + "Master Report Template.pptx")
 
-    create_title_slide(prs,miss_dict["1"])
+    # Grab the first report in the dictionary for this info, it doesn't matter
+    # which
+    create_title_slide(prs,miss_dict.itervalues().next())
 
     for report in miss_dict.itervalues():
         build_report_slide(prs,report)
@@ -177,8 +179,8 @@ def insert_bio(slide,report):
 
     # Insert India Map based off state name
     india_pic_holder = slide.placeholders[12]
-    india_pic_holder.insert_picture('C:\Users\\br1\Dropbox\NCM\Reports, ' +
-        'bills and Proposals\!Reporting Workflow\Map Images\\' +
+    india_pic_holder.insert_picture('C:\Users\\br1\Dropbox\NCM\Reports' +
+        '\!Reporting Workflow\Map Images\\' +
         state_dict[state_ab] + '.png')
 
     # Insert Name
@@ -203,6 +205,7 @@ def insert_bio(slide,report):
 
 def get_bio_from_factfile(slide,miss_id):
     # Pull down info for missionary based off missionary ID from factfile sheet
+    ff_data = get_all_factfile_data()
 
     # Get the Imgur image ID for the profile picture
 
@@ -229,7 +232,7 @@ def get_report_round(timestamp):
     elif date.month in range(9,13):
         report_round = "3"+str(date.year)
     else:
-        report_round = ""
+        report_round = "ERROR"
     return report_round
 
 def build_report_slide(prs,report):

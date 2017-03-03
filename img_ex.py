@@ -21,6 +21,9 @@ def main(argv=None):
                              access_token,
                              refresh_token)
 
+    return post_images(client)
+
+def post_images(client):
     # Get the dropbox directory
     dropbox_dir = os.getcwd()
 
@@ -69,8 +72,12 @@ def main(argv=None):
                                         config=config,
                                         anon=False)
                 print "File {0} uploaded".format(fname)
-
     return 0        # success
+
+def get_image(client,miss_id):
+    # Using the missionary ID as the filename, pull down and return the
+    # corresponding picture
+    return client.get_image(miss_id + ".png")
 
 def authenticate():
     # Get client ID and secret from auth.ini

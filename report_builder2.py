@@ -69,12 +69,12 @@ def construct_data(values):
                   "Missionary ID":row[7],
                   "Report":       row[40],
                  }
-        for i,village in enumerate(row[8:3:26]):
+        for i,village in enumerate(row[8:26:3]):
             if village != "":
                 vill_dict = {
-                    "Village": row[i+6],
-                    "People":  row[i+7],
-                    "Baptisms":row[i+8],
+                    "Village": village,
+                    "People":  row[3*i+9],
+                    "Baptisms":row[3*i+10],
                 }
                 report['Village '+str(i+1)] = vill_dict
         report['Prayer'] = '\n'.join(row[41:48]).strip()
@@ -205,10 +205,21 @@ def insert_bio(slide,report):
     assert bio_holder.has_text_frame
     bio_holder.text_frame.clear()
     p = bio_holder.text_frame.paragraphs[0]
-    # TODO - get these numbers out above
-    #bio_line("\n Churches: ", str(churches), p)
-    #bio_line("\n Coming for Prayer: ", str(prayer_nos), p)
-    #bio_line("\n Baptisms: ", str(baptisms), p)
+    # Apply numbers for churches and baptisms
+    churches = 0
+    prayer_nos = 0
+    baptisms = 0
+    print report.keys()
+    for f in range(1,6):
+        key = "Village {}".format(f)
+        if key in report:
+            churches += 1
+            prayer_nos += int(report[key]["People"])
+            baptisms += int(report[key]["Baptisms"])
+
+    bio_line("\n Churches: ", str(churches), p)
+    bio_line("\n Coming for Prayer: ", str(prayer_nos), p)
+    bio_line("\n Baptisms: ", str(baptisms), p)
 
     profile_pic_holder = slide.placeholders[10]
 

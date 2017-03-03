@@ -98,21 +98,20 @@ def create_powerpoint(miss_dict):
     # which
     create_title_slide(prs,miss_dict.itervalues().next())
 
+    counter = 1
     for report in miss_dict.itervalues():
+        print "Creating report slide " + str(counter)
         build_report_slide(prs,report)
-
+        counter+=1
 
     # TODO - Save the powerpoint in a folder with Missionary ID - discuss with Alex
-    print "Where should this report be saved? (Will use default staging area if none.)"
-    save_path = raw_input()
-    save_name = docx_path.split("\\")[-1].split(".")[0]
-    prs.save(save_path + save_name + ".pptx")
+    path = "C:\Users\\br1\Code\\500k\\test.pptx"
+    prs.save(path)
+    return path
 
 def create_title_slide(prs,report):
     # Access placeholders for Title slide
     title_slide = prs.slides[0]
-    for shape in title_slide.placeholders:
-        print('%d %s' % (shape.placeholder_format.idx, shape.name))
 
     # Insert Missionary Name
     name_holder = title_slide.placeholders[0]
@@ -237,7 +236,7 @@ def get_report_round(timestamp):
 
 def build_report_slide(prs,report):
     # Access placeholders for content slides
-    content_slide = prs.slides.add_slide(prs.slide_layouts[1])
+    content_slide = prs.slides.add_slide(prs.slide_layouts[0])
 
     for shape in content_slide.placeholders:
         print('%d %s' % (shape.placeholder_format.idx, shape.name))
@@ -254,7 +253,7 @@ def build_report_slide(prs,report):
     report_holder.text_frame.clear()
     p = report_holder.text_frame.paragraphs[0]
     run = p.add_run()
-    run.text = report
+    run.text = report["Report"]
 
     # Prayer heading
     prayer_h_holder = content_slide.placeholders[15]
@@ -270,7 +269,7 @@ def build_report_slide(prs,report):
     prayer_b_holder.text_frame.clear()
     p = prayer_b_holder.text_frame.paragraphs[0]
     run = p.add_run()
-    run.text = prayers
+    run.text = report["Prayer 1"]
 
 if __name__ == '__main__':
     status = main()

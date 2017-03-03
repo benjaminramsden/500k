@@ -50,8 +50,7 @@ def construct_data(values):
     #              -> Baptisms
     #          -> Village 2
     #           ...
-    #          -> Prayer Point 1
-    #          -> Prayer Point 2
+    #          -> All Prayer Points
     #           ...
     #      -> Report 2
     #       ...
@@ -78,9 +77,7 @@ def construct_data(values):
                     "Baptisms":row[i+8],
                 }
                 report['Village '+str(i+1)] = vill_dict
-        for i,prayer in enumerate(row[41:48]):
-            if prayer != "":
-                report['Prayer '+str(i+1)] = prayer
+        report['Prayer'] = '\n'.join(row[41:48]).strip()
         report_round = get_report_round(report["Date"])
         if report["Missionary ID"] in all_dict.keys():
             # Missionary already exists, add report to missionary dictionary
@@ -287,7 +284,7 @@ def build_report_slide(prs,report):
     prayer_b_holder.text_frame.clear()
     p = prayer_b_holder.text_frame.paragraphs[0]
     run = p.add_run()
-    run.text = report["Prayer 1"]
+    run.text = report["Prayer"]
 
     return success
 

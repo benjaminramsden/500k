@@ -22,6 +22,10 @@ def main(argv=None):
     # where each list is a row of cells.
     values = get_all_missionary_reports()
 
+    # Make sure the list of Imgur profile pic IDs is up to date.
+    update_imgur_ids(values)
+
+    # Now build out the data into usable dictionaries
     all_dict = construct_data(values)
 
     # Time to create the presentations, loop around for every single missionary

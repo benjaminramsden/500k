@@ -2,10 +2,16 @@ import sys
 from imgurpython import ImgurClient
 import os
 import zipfile
+from sheets_api import update_sheet, get_all_missionary_reports
 
 def main(argv=None):
 
     # Authenticate the user here, authentication details go in auth.ini.
+    client = start_client()
+
+    return post_images(client)
+
+def start_client():
     config = get_config()
     config.read('auth.ini')
     client_id = config.get('credentials', 'client_id')
@@ -20,44 +26,26 @@ def main(argv=None):
                              client_secret,
                              access_token,
                              refresh_token)
-
-    return post_images(client)
+    return client
 
 def post_images(client):
-    # Get the dropbox directory
-    dropbox_dir = os.getcwd()
+    # Get the dropbox parent directory containing the factfiles
+    dropbox_dir = "C:\Users\\br1\Dropbox\NCM\\500k advocates & Missionary factfiles\New missionary factfiles by month"
 
-    # Rename files to *.zip
-    [os.rename(f, f.replace('.docx', '.zip')) for f in os.listdir(dropbox_dir) if not f.startswith('.')]
-
-    # unzip docx (now zip) files
-    for file in os.listdir(dropbox_dir):
-        if file.endswith('.zip'):
-            zip_ref = zipfile.ZipFile(dropbox_dir + "/" + file, 'r')
-            zip_ref.extractall(dropbox_dir)
+    # Walk the subdirectories, copying each doc and docx file and replacing
+    # the file extension with .zip and extract
+    for dirpath, dirnames, filenames in os.walk("."):
+        for filename in [f for f in filenames if f.endswith((".doc",".docx"))]:
+            print("Extracting image from file: {}".format(filename))
+            new_f = filename.split(".")[0]+".zip"
+            shutil.copyfile(filename,new_f)
+            zip_ref = zipfile.ZipFile(new_f, 'r')
+            zip_ref.extractall(dirpath)
             zip_ref.close()
 
-    # For posting:
-    # - Create monthly album (if doesn't already exist) use dropbox folder name
-    # - Post all profile pics to that album
-    dropbox_dir = dropbox_dir.rpartition('/')[2]
-    print "dropbox_dir: {0}".format(dropbox_dir)
-
-    # Check Imgur to see if this album already exists
-    album_ids = client.get_account_album_ids('ramalamman', page=0)
-
-    found_dir = False
-    for album in album_ids:
-        album_dir = client.get_album(album)
-        if album_dir.title == dropbox_dir:
-            album_id = album
-            found_dir = True
-            break
-    if not found_dir:
-        album_id = client.create_album(fields={'title': dropbox_dir, 'privacy': 'Hidden'})
-
-    # Post all pictures from unzipped directory into this album
-    # Requires uploading image first with album to assign to
+    # Post these pictures using the missionary ID as the title.
+    # Due to limitations of the previous format, change the filename manually
+    # on Imgur.
     for dirName, subdirList, fileList in os.walk(dropbox_dir):
         print('Found directory: %s' % dirName)
         for fname in fileList:
@@ -73,11 +61,6 @@ def post_images(client):
                                         anon=False)
                 print "File {0} uploaded".format(fname)
     return 0        # success
-
-def get_image(client,miss_id):
-    # Using the missionary ID as the filename, pull down and return the
-    # corresponding picture
-    return client.get_image(miss_id + ".png")
 
 def authenticate():
     # Get client ID and secret from auth.ini
@@ -138,6 +121,35 @@ def rename(dir, pattern, titlePattern):
         title, ext = os.path.splitext(os.path.basename(pathAndFilename))
         os.rename(pathAndFilename,
                   os.path.join(dir, titlePattern % title + ext))
+
+def update_imgur_ids():
+    # Have the image ID from Imgur put into the spreadsheet against each
+    # report so we know where to grab it from.
+    client = start_client()
+
+    # Get image data, match title of file to Missionary ID and then add this
+    # data to the end of the list.
+    (miss_ids, imgur_ids) = get_all_missionary_reports(imgur=True)
+    images = client.get_account_images('me')
+
+    # By default Google does not keep empty list entries at the end of a
+    # row/column, correct this now
+    imgur_ids.extend([[]]*(len(miss_ids)-len(imgur_ids)))
+
+    # WARNING - This loop is slow, should try to speed it up
+    for idx,imgur_id in enumerate(imgur_ids):
+        if not imgur_id:
+            # This needs updating, find the Imgur picture based on it's title
+            # which should match the Missionary ID of the same index
+            for image in images:
+                if image.title==miss_ids[idx]:
+                    # Matched, update the Imgur ID list
+                    print("Updating photo for Missionary ID {0}, the image ID"
+                          "is {1}".format(image.title,image.id))
+                    imgur_id = image.id
+
+    # TODO - Upload the new data to the spreadsheet
+    update_sheet(imgur_ids,imgur=True)
 
 if __name__ == '__main__':
     status = main()

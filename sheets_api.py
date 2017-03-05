@@ -15,8 +15,8 @@ except ImportError:
     flags = None
 
 # If modifying these scopes, delete your previously saved credentials
-# at ~/.credentials/sheets.googleapis.com-python-quickstart.json
-SCOPES = 'https://www.googleapis.com/auth/spreadsheets.readonly'
+# at ~/.credentials/sheets.googleapis.com-500k.json
+SCOPES = 'https://www.googleapis.com/auth/spreadsheets'
 CLIENT_SECRET_FILE = 'client_secret.json'
 APPLICATION_NAME = 'Google Sheets API Python Quickstart'
 
@@ -35,7 +35,7 @@ def get_credentials():
     if not os.path.exists(credential_dir):
         os.makedirs(credential_dir)
     credential_path = os.path.join(credential_dir,
-                                   'sheets.googleapis.com-python-quickstart.json')
+                                   'sheets.googleapis.com-500k.json')
 
     store = Storage(credential_path)
     credentials = store.get()
@@ -49,7 +49,7 @@ def get_credentials():
         print('Storing credentials to ' + credential_path)
     return credentials
 
-def get_all_missionary_reports():
+def get_all_missionary_reports(imgur=False):
     # Log into Google and extract all column data.
     credentials = get_credentials()
     http = credentials.authorize(httplib2.Http())
@@ -59,10 +59,18 @@ def get_all_missionary_reports():
                               discoveryServiceUrl=discoveryUrl)
 
     spreadsheetId = '1AR7akf5vREy8YpROIDBb_wQxCtGbhCLOJ6GweXxYZB8'
-    rangeName = 'Extractor!A3:BA1000'
-    result = service.spreadsheets().values().get(
-        spreadsheetId=spreadsheetId, range=rangeName).execute()
-    values = result.get('values', [])
+    if imgur:
+        rangeNames = ['Extractor!H3:H1000','Extractor!AX3:AX1000']
+        result = service.spreadsheets().values().batchGet(
+            spreadsheetId=spreadsheetId, ranges=rangeNames).execute()
+        miss_ids = result.get('valueRanges', [])[0]["values"]
+        imgur_ids = result.get('valueRanges', [])[1]["values"]
+        values = (miss_ids, imgur_ids)
+    else:
+        rangeName = 'Extractor!A3:BA1000'
+        result = service.spreadsheets().values().get(
+            spreadsheetId=spreadsheetId, range=rangeName).execute()
+        values = result.get('values', [])
     if not values:
         print('No data found.')
     else:
@@ -88,9 +96,8 @@ def upload_report(pdf_path):
     drive_url = 'https://www.googleapis.com/drive/v3/files/'
     return drive_url + file.get('id')
 
-# When report is generated and uploaded to Google Drive, this will put the
-# URL of the report PDF into the spreadsheet.
-def write_url_to_sheet(url):
+# Post updated sheet to Google
+def update_sheet(data,imgur=False):
     # Log into Google and extract all column data.
     credentials = get_credentials()
     http = credentials.authorize(httplib2.Http())
@@ -99,29 +106,18 @@ def write_url_to_sheet(url):
     service = discovery.build('sheets', 'v4', http=http,
                               discoveryServiceUrl=discoveryUrl)
 
-    spreadsheetId = '1AR7akf5vREy8YpROIDBb_wQxCtGbhCLOJ6GweXxYZB8'
-    # Need to know range to paste based on Missionary ID
-    rangeName = 'Extractor!AW'
-    result = service.spreadsheets().values().get(
-        spreadsheetId=spreadsheetId, range=rangeName).execute()
-    values = result.get('values', [])
-    if not values:
-        print('No data found.')
+    spreadsheet_id = '1AR7akf5vREy8YpROIDBb_wQxCtGbhCLOJ6GweXxYZB8'
+    if imgur:
+        range_name = 'Extractor!AX3:AX1000'
     else:
-        return values
+        range_name = 'Extractor!A3:BA1000'
 
-    values = [
-        [
-            url
-        ],
-        # Additional rows ...
-    ]
     body = {
-        'values': values
+        'values': data
     }
-    result = service.spreadsheets().values().update(
+    return service.spreadsheets().values().update(
         spreadsheetId=spreadsheet_id, range=range_name,
-        valueInputOption=value_input_option, body=body).execute()
+        valueInputOption="RAW", body=body).execute()
 
 def get_all_factfile_data():
     # Log into Google and extract all column data.

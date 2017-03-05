@@ -1,6 +1,6 @@
 from pptx import Presentation
 from docx import Document
-from imgurpython import ImgurClient
+from imgur import *
 from datetime import datetime
 import sys, os, shutil, re
 from utils import *
@@ -23,7 +23,7 @@ def main(argv=None):
     values = get_all_missionary_reports()
 
     # Make sure the list of Imgur profile pic IDs is up to date.
-    update_imgur_ids(values)
+    update_imgur_ids()
 
     # Now build out the data into usable dictionaries
     all_dict = construct_data(values)
@@ -34,11 +34,14 @@ def main(argv=None):
     for miss_id,miss_dict in all_dict.iteritems():
         pptx = create_powerpoint(miss_dict)
 
-        # Export to pdf
-        if pptx:
-            PPTtoPDF(pptx, pptx.split(".")[0] + ".pdf")
-        else:
-            print "Build failed for missionary with ID:" + miss_id
+        # Export to pdf - this is the slowest part
+        #if pptx:
+        #    PPTtoPDF(pptx, pptx.split(".")[0] + ".pdf")
+        #else:
+        #    print "Build failed for missionary with ID:" + miss_id
+
+    # TODO - Now upload all these reports to Google Drive via API, saving the
+    # URL/ID of the report back into Google Sheets
 
     return 0
 

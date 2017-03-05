@@ -28,40 +28,6 @@ def start_client():
                              refresh_token)
     return client
 
-def post_images(client):
-    # Get the dropbox parent directory containing the factfiles
-    dropbox_dir = "C:\Users\\br1\Dropbox\NCM\\500k advocates & Missionary factfiles\New missionary factfiles by month"
-
-    # Walk the subdirectories, copying each doc and docx file and replacing
-    # the file extension with .zip and extract
-    for dirpath, dirnames, filenames in os.walk("."):
-        for filename in [f for f in filenames if f.endswith((".doc",".docx"))]:
-            print("Extracting image from file: {}".format(filename))
-            new_f = filename.split(".")[0]+".zip"
-            shutil.copyfile(filename,new_f)
-            zip_ref = zipfile.ZipFile(new_f, 'r')
-            zip_ref.extractall(dirpath)
-            zip_ref.close()
-
-    # Post these pictures using the missionary ID as the title.
-    # Due to limitations of the previous format, change the filename manually
-    # on Imgur.
-    for dirName, subdirList, fileList in os.walk(dropbox_dir):
-        print('Found directory: %s' % dirName)
-        for fname in fileList:
-            print('\t%s' % fname)
-            if fname.lower().endswith(('.png', '.jpg', '.jpeg')):
-                config = {
-                    'album': album_id,
-                    'name': fname,
-                    'title': fname
-                }
-                client.upload_from_path(path=dirName + "/" + fname,
-                                        config=config,
-                                        anon=False)
-                print "File {0} uploaded".format(fname)
-    return 0        # success
-
 def authenticate():
     # Get client ID and secret from auth.ini
     config = get_config()
@@ -116,12 +82,6 @@ def get_config():
         import configparser
         return configparser.ConfigParser(allow_no_value=True)
 
-def rename(dir, pattern, titlePattern):
-    for pathAndFilename in glob.iglob(os.path.join(dir, pattern)):
-        title, ext = os.path.splitext(os.path.basename(pathAndFilename))
-        os.rename(pathAndFilename,
-                  os.path.join(dir, titlePattern % title + ext))
-
 def update_imgur_ids():
     # Have the image ID from Imgur put into the spreadsheet against each
     # report so we know where to grab it from.
@@ -148,8 +108,47 @@ def update_imgur_ids():
                           "is {1}".format(image.title,image.id))
                     imgur_id = image.id
 
-    # TODO - Upload the new data to the spreadsheet
+    # Upload the new data to the spreadsheet
     update_sheet(imgur_ids,imgur=True)
+
+def post_images(client):
+    # Get the dropbox parent directory containing the factfiles
+    dropbox_dir = ("C:\Users\\br1\Dropbox\NCM\\500k advocates & Missionary " +
+        "factfiles\New missionary factfiles by month")
+
+    # Walk the subdirectories, copying each doc and docx file and replacing
+    # the file extension with .zip and extract
+    for dirpath, dirnames, filenames in os.walk("."):
+        for filename in [f for f in filenames if f.endswith((".doc",".docx"))]:
+            print("Extracting image from file: {}".format(filename))
+            new_f = filename.split(".")[0]+".zip"
+            shutil.copyfile(filename,new_f)
+            zip_ref = zipfile.ZipFile(new_f, 'r')
+            zip_ref.extractall(dirpath)
+            zip_ref.close()
+
+    # Post these pictures using the missionary ID as the title.
+    # Due to limitations of the previous format, change the filename manually
+    # on Imgur.
+    for dirName, subdirList, fileList in os.walk(dropbox_dir):
+        print('Found directory: %s' % dirName)
+        for fname in fileList:
+            print('\t%s' % fname)
+            if fname.lower().endswith(('.png', '.jpg', '.jpeg')):
+                config = {
+                    'album': album_id,
+                    'name': fname,
+                    'title': fname
+                }
+                client.upload_from_path(path=dirName + "/" + fname,
+                                        config=config,
+                                        anon=False)
+                print "File {0} uploaded".format(fname)
+    return 0        # success
+
+def get_image(img_id):
+    client = start_client()
+    return client.get_image(img_id)
 
 if __name__ == '__main__':
     status = main()

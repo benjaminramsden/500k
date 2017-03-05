@@ -65,8 +65,15 @@ def construct_data(values):
     #   ...
     print "Constructing data"
 
+
+
     all_dict = dict()
     for row in values:
+        # Google sheets doesn't append blank rows, hack this here
+        if len(row)>48:
+            imgur_id = row[49]
+        else:
+            imgur_id = ""
         report = {"Date":         row[0],
                   "Subject":      row[1],
                   "Raw":          row[3],
@@ -75,6 +82,7 @@ def construct_data(values):
                   "Missionary":   row[6],
                   "Missionary ID":row[7],
                   "Report":       row[40],
+                  "Imgur ID":     imgur_id
                  }
         for i,village in enumerate(row[8:26:3]):
             if village != "":
@@ -151,13 +159,6 @@ def create_title_slide(prs,report):
     return prs
 
 def insert_bio(slide,report):
-    # TODO - Get totals for churches, baptisms and prayer
-    #for k, value in report:
-    #    # Only villages are nested dictionaries, so test on value is dictionary
-    #    # BLEURGH
-    #    if isinstance(value, dict):
-    #        pass
-
     # Define the state acronyms here, this could be moved out at a later date
     state_dict = {"AN": "Andaman Nicobar",
                   "AP": "Andhra Pradesh",
@@ -190,8 +191,9 @@ def insert_bio(slide,report):
     try:
         run.text = "State: " + state_dict[state_ab]
     except KeyError:
-        print("Report dated {0} for missionary {1} has incorrect Missionary "
-            "ID, chase Shijo".format(report["Date"],report["Missionary"]))
+        print("ERROR: Report dated {0} for missionary {1} has incorrect "
+            "Missionary ID, chase Shijo".format(report["Date"],
+                                                report["Missionary"]))
         return 1
 
     # Insert India Map based off state name
@@ -216,7 +218,7 @@ def insert_bio(slide,report):
     churches = 0
     prayer_nos = 0
     baptisms = 0
-    print report.keys()
+
     for f in range(1,6):
         key = "Village {}".format(f)
         if key in report:
@@ -228,7 +230,16 @@ def insert_bio(slide,report):
     bio_line("\n Coming for Prayer: ", str(prayer_nos), p)
     bio_line("\n Baptisms: ", str(baptisms), p)
 
+    # Download Imgur picture, store off and add to report
     profile_pic_holder = slide.placeholders[10]
+    if report["Imgur ID"]:
+        print("Inserting picture for Missionary ID: {}".format(
+            report["Missionary ID"]))
+        image = get_image(report["Imgur ID"])
+        profile_pic_holder.insert_picture(image)
+    else:
+        print("ERROR: Image missing for Missionary ID: {}".format(
+            report["Missionary ID"]))
 
     # get_bio_from_factfile(slide,report["Missionary ID"])
     return
@@ -236,11 +247,6 @@ def insert_bio(slide,report):
 def get_bio_from_factfile(slide,miss_id):
     # Pull down info for missionary based off missionary ID from factfile sheet
     ff_data = get_all_factfile_data()
-
-    # Get the Imgur image ID for the profile picture
-
-    # Pull down Imgur profile picture and insert into presentation
-    profile_pic_holder.insert_picture(img_path)
 
 def enter_report_title(report, slide):
     date = datetime.strptime(report["Date"], '%Y-%m-%d %H:%M:%S')
@@ -268,9 +274,6 @@ def get_report_round(timestamp):
 def build_report_slide(prs,report):
     # Access placeholders for content slides
     content_slide = prs.slides.add_slide(prs.slide_layouts[0])
-
-    for shape in content_slide.placeholders:
-        print('%d %s' % (shape.placeholder_format.idx, shape.name))
 
     # Add biography, mainly from factfile
     success = insert_bio(content_slide, report)

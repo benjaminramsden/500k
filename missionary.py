@@ -6,15 +6,16 @@ from utils import validate_state
 
 class Person(object):
     """Used to detail basic information on a person"""
-    def __init__(self, first_name):
+    def __init__(self, first_name=None):
         super(Person, self).__init__()
-        self.first_name = first_name
+        if first_name:
+            self.first_name = first_name.title()
 
 class Adult(Person):
     """Uses the information to build adult data."""
     def __init__(self, surname, first_name=None):
         super(Adult, self).__init__(first_name)
-        self.surname = surname.rstrip('\r')
+        self.surname = surname.rstrip('\r').title()
 
 class Missionary(Adult):
     """

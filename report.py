@@ -22,20 +22,20 @@ class Report(object):
         self.name = name
         self.id = pid
         print "Report Lengths {0}".format(len(report))
-        if len(report) < 3000:
+        if len(report) < 1700:
             self.report = [report]
         else:
             paragraphs = report.split("\n")
             if len(paragraphs) > 1:
                 temp = paragraphs[0]
-                counter = 0
+                self.report = [temp]
+                counter = 1
                 for para in paragraphs[1:]:
-                    (temp + "\n").join(para)
+                    temp = (temp + "\n").join(para)
                     if len(temp) > 1700:
                         break
                     self.report = [temp]
                     counter += 1
-                print "Report split {0}".format(self.report)
                 self.report.extend(paragraphs[counter:])
             else:
                 print "ERROR: SUPER LONG PARAGRAPH - MUST FIX"

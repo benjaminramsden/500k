@@ -229,9 +229,9 @@ def create_title_slide(prs,missionary):
     name_holder.text_frame.clear()
     p = name_holder.text_frame.paragraphs[0]
     run = p.add_run()
-    if missionary.first_name:
+    try:
         run.text = missionary.first_name + " " + missionary.surname
-    else:
+    except AttributeError:
         run.text = missionary.surname
 
     # Insert Missionary ID
@@ -285,7 +285,7 @@ def insert_bio(slide, missionary, report):
     run = p.add_run()
     try:
         run.text = missionary.first_name + " " + missionary.surname
-    except TypeError:
+    except AttributeError:
         run.text = missionary.surname
 
     bio_holder = slide.placeholders[11]

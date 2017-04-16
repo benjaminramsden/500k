@@ -48,3 +48,30 @@ def build_slide(prs):
     # Call the standard template for the report slides
     slide_layout = prs.slide_layouts[SLD_LAYOUT_TITLE_AND_CONTENT]
     slide = prs.slides.add_slide(slide_layout)
+
+def validate_state(state):
+    state_dict = {"AN": "Andaman Nicobar",
+                  "AP": "Andhra Pradesh",
+                  "AS": "Assam",
+                  "CH": "Chhattisgarh",
+                  "HR": "Haryana",
+                  "GJ": "Gujarat",
+                  "HP": "Himachal Pradesh",
+                  "JK": "Jammu & Kashmir",
+                  "KA": "Karnataka",
+                  "KL": "Kerala",
+                  "MP": "Madhya Pradesh",
+                  "MH": "Maharashtra",
+                  "OR": "Odisha (Orissa)",
+                  "PB": "Punjab",
+                  "RJ": "Rajasthan",
+                  "TN": "Tamil Nadu",
+                  "TA": "Telangana",
+                  "TR": "Tripura",
+                  "UP": "Uttar Pradesh",
+                  "UK": "Uttarakhand"}
+    if state in state_dict:
+        return state
+    else:
+        print "Invalid state"
+        return None

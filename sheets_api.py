@@ -49,7 +49,7 @@ def get_credentials():
         print('Storing credentials to ' + credential_path)
     return credentials
 
-def get_all_missionary_reports(imgur=False):
+def get_all_missionary_reports():
     # Log into Google and extract all column data.
     credentials = get_credentials()
     http = credentials.authorize(httplib2.Http())
@@ -59,18 +59,10 @@ def get_all_missionary_reports(imgur=False):
                               discoveryServiceUrl=discoveryUrl)
 
     spreadsheetId = '1AR7akf5vREy8YpROIDBb_wQxCtGbhCLOJ6GweXxYZB8'
-    if imgur:
-        rangeNames = ['Extractor!H3:H1000','Extractor!AX3:AX1000']
-        result = service.spreadsheets().values().batchGet(
-            spreadsheetId=spreadsheetId, ranges=rangeNames).execute()
-        miss_ids = result.get('valueRanges', [])[0]["values"]
-        imgur_ids = result.get('valueRanges', [])[1]["values"]
-        values = (miss_ids, imgur_ids)
-    else:
-        rangeName = 'Extractor!A3:BA1000'
-        result = service.spreadsheets().values().get(
-            spreadsheetId=spreadsheetId, range=rangeName).execute()
-        values = result.get('values', [])
+    rangeName = 'Extractor 2!A2:BA1000'
+    result = service.spreadsheets().values().get(
+        spreadsheetId=spreadsheetId, range=rangeName).execute()
+    values = result.get('values', [])
     if not values:
         print('No data found.')
     else:
@@ -108,9 +100,9 @@ def update_sheet(data,imgur=False):
 
     spreadsheet_id = '1AR7akf5vREy8YpROIDBb_wQxCtGbhCLOJ6GweXxYZB8'
     if imgur:
-        range_name = 'Extractor!AX3:AX1000'
+        range_name = 'Extractor 2!AX3:AX1000'
     else:
-        range_name = 'Extractor!A3:BA1000'
+        range_name = 'Extractor 2!A3:BA1000'
 
     body = {
         'values': data
@@ -128,8 +120,8 @@ def get_all_factfile_data():
     service = discovery.build('sheets', 'v4', http=http,
                               discoveryServiceUrl=discoveryUrl)
 
-    spreadsheetId = '1bnI0Xh6UosI5SIQw3EUBByDgi9mFv-qYmd4g6LvKshA'
-    rangeName = 'Sheet1!A4:AD1000'
+    spreadsheetId = '1gzN08u0gvBLn2Qg5_sevP6sdxWGkoc_XmpvuFxoHLyo'
+    rangeName = 'Sheet1!A3:EA1000'
     result = service.spreadsheets().values().get(
         spreadsheetId=spreadsheetId, range=rangeName).execute()
     values = result.get('values', [])

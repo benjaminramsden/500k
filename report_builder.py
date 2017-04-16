@@ -1,10 +1,13 @@
+# -*- coding: utf-8 -*-
 from pptx import Presentation
 from docx import Document
-from imgur import *
 from datetime import datetime
 import sys, os, shutil, re
 from utils import *
 from sheets_api import *
+from report import Report
+from village import Village
+from missionary import Missionary, Child, Spouse
 
 # This script conducts the following:
 # - Gets the information on a missionary based on Miss ID (gets all)
@@ -17,35 +20,47 @@ from sheets_api import *
 # With this info Ben can then send out multiple reports using:
 # https://support.yet-another-mail-merge.com/hc/en-us/articles/210735349
 
+
 def main(argv=None):
     # Gather all information from the spreadsheet. Returned as list of lists
     # where each list is a row of cells.
-    values = get_all_missionary_reports()
+    report_data = get_all_missionary_reports()
 
-    # Make sure the list of Imgur profile pic IDs is up to date.
-    update_imgur_ids()
+    # Add in the factfile information
+    factfile_data = get_all_factfile_data()
 
     # Now build out the data into usable dictionaries
-    all_dict = construct_data(values)
+    all_missionaries = construct_data(report_data, factfile_data)
 
     # Time to create the presentations, loop around for every single missionary
     # TODO - In future make sure only missionaries with new reports get
     # generated
-    for miss_id,miss_dict in all_dict.iteritems():
+    for miss_id, miss_dict in all_missionaries.iteritems():
         pptx = create_powerpoint(miss_dict)
 
         # Export to pdf - this is the slowest part
-        #if pptx:
-        #    PPTtoPDF(pptx, pptx.split(".")[0] + ".pdf")
-        #else:
-        #    print "Build failed for missionary with ID:" + miss_id
+        # if pptx:
+        #     PPTtoPDF(pptx, pptx.split(".")[0] + ".pdf")
+        # else:
+        #     print "Build failed for missionary with ID:" + miss_id
 
     # TODO - Now upload all these reports to Google Drive via API, saving the
     # URL/ID of the report back into Google Sheets
 
     return 0
 
-def construct_data(values):
+def construct_data(report_data, factfile_data):
+    """
+    Take from the two different spreadsheets to create a total view of all the
+    missionary data, once complete we have all the info required to start
+    creating the reports.
+    """
+    all_missionaries = {}
+    construct_factfile_data(all_missionaries, factfile_data)
+    construct_report_data(all_missionaries, report_data)
+    return all_missionaries
+
+def construct_report_data(all_missionaries, report_data):
     # For all the missionaries, arrange data in this structure:
     # All
     #  -> Missionary 1 (based on ID)
@@ -63,47 +78,108 @@ def construct_data(values):
     #       ...
     #  -> Missionary 2
     #   ...
-    print "Constructing data"
+    print "Constructing report data"
 
+    # As we may change the order of the columns from time to time and need to
+    # make this sustainable for any changes, create a dictionary of column
+    # numbers against the column header text. This should be a single linear
+    # search to get all the headings.
+    columns = dict()
+    for idx, column in enumerate(report_data[0]):
+        columns[column] = idx
 
+    print "Headings: {0}".format(report_data[0])
+    for row in report_data[1:]:
+        if len(row) > columns[u'\u2022Main Story / Report: ']:
+            report = Report(row[columns['Date (Pretty)']],
+                            row[columns[u'\u2022Missionary Name: ']],
+                            row[columns[u'\u2022MissionaryID: ']],
+                            row[columns[u'\u2022Main Story / Report: ']])
+            villages = []
+            prayer_rqs = []
+            for i in range(1,6):
+                if row[columns[u'\u2022V' + str(i) + ': ']]:
+                    villages.append(
+                        Village(row[columns[u'\u2022V' + str(i) + ': ']],
+                                row[columns[u'\u2022V' + str(i) + 'N: ']],
+                                row[columns[u'\u2022V' + str(i) + 'B: ']]))
+            for i in range(1,9):
+                if len(row) > columns["P-R-" + str(i) + ": "]:
+                    prayer_rqs.append(row[columns["P-R-" + str(i) + ": "]])
+            report.villages = villages
+            report.prayer_rqs = prayer_rqs
+            report.round = report.get_report_round()
+            missionary_id = report.id
+            if missionary_id in all_missionaries.keys():
+                # Missionary already exists, add report to missionary dictionary
+                missionary = all_missionaries[missionary_id]
+            else:
+                # New missionary, create new missionary and add report.
+                print "Missionary not found, does {0} exist?".format(
+                    missionary_id)
+                names = report.name.split(" ")
+                if len(names) > 1:
+                    missionary = Missionary(missionary_id,
+                                            names[-1],
+                                            names[-2])
+                else:
+                    missionary = Missionary(missionary_id,
+                                            names[-1],
+                                            None)
+                all_missionaries[missionary_id] = missionary
+            missionary.reports[missionary_id] = report
 
-    all_dict = dict()
-    for row in values:
-        # Google sheets doesn't append blank rows, hack this here
-        if len(row)>48:
-            imgur_id = row[49]
-        else:
-            imgur_id = ""
-        report = {"Date":         row[0],
-                  "Subject":      row[1],
-                  "Raw":          row[3],
-                  "Submitter":    row[4],
-                  "Email":        row[5],
-                  "Missionary":   row[6],
-                  "Missionary ID":row[7],
-                  "Report":       row[40],
-                  "Imgur ID":     imgur_id
-                 }
-        for i,village in enumerate(row[8:26:3]):
-            if village != "":
-                vill_dict = {
-                    "Village": village,
-                    "People":  row[3*i+9],
-                    "Baptisms":row[3*i+10],
-                }
-                report['Village '+str(i+1)] = vill_dict
-        report['Prayer'] = '\n'.join(row[41:48]).strip()
-        report_round = get_report_round(report["Date"])
-        if report["Missionary ID"] in all_dict.keys():
-            # Missionary already exists, add report to missionary dictionary
-            miss_dict = all_dict[report["Missionary ID"]]
-            miss_dict[report_round] = report
-        else:
-            # New missionary, create new dictionary and add report to it.
-            all_dict[report["Missionary ID"]] = {report_round: report}
+    print "Report data has been constructed"
 
-    print "Data has been constructed"
-    return all_dict
+def construct_factfile_data(all_missionaries, factfile_data):
+    """
+    With missionary reports constructed, now add the factfile data to the side
+    """
+    print "Constructing factfile data"
+
+    # As we may change the order of the columns from time to time and need to
+    # make this sustainable for any changes, create a dictionary of column
+    # numbers against the column header text. This should be a single linear
+    # search to get all the headings.
+    columns = dict()
+    for idx, column in enumerate(factfile_data[0]):
+        columns[column] = idx
+
+    print "Headings: {0}".format(factfile_data[0])
+    for row in factfile_data[1:]:
+        if len(row) > columns[u'MissionField State']:
+            # Basics mandatory for a factfile
+            missionary = Missionary(row[columns[u'ID (new)']],
+                                    row[columns[u'MissionarySecondName']],
+                                    row[columns[u'MissionaryFirstName']])
+            missionary.state = validate_state(
+                row[columns[u'MissionField State']])
+            # Add family and biography
+            if len(row) > columns[u'Number of Dependents']:
+                if row[columns[u'Wife / Husband\'s First Name']]:
+                    missionary.spouse = Spouse(
+                        row[columns[u'Wife / Husband\'s First Name']],
+                        row[columns[u'Wife / Husband\'s Second Name']],
+                    )
+            for i in range(1, 6):
+                if row[columns[u'Child ' + str(i) + ' First Name']]:
+                    missionary.children[u'Child ' + str(i)] = Child(
+                        row[columns[u'Child ' + str(i) + ' First Name']],
+                        row[columns[u'Child ' + str(i) + ' DOB']])
+
+            # Mission field data
+            villages = []
+            prayer_rqs = []
+            for i in range(1, 6):
+                if (len(row) > columns[u'V' + str(i) + ' B'] and
+                    row[columns[u'V' + str(i)]]):
+                    villages.append(
+                        Village(row[columns[u'V' + str(i)]],
+                                row[columns[u'V' + str(i) + ' N']],
+                                row[columns[u'V' + str(i) + ' B']]))
+            missionary.villages = villages
+
+    print "Factfile data has been constructed"
 
 def create_powerpoint(miss_dict):
     # Import presentation
@@ -258,18 +334,6 @@ def enter_report_title(report, slide):
     p = title_holder.text_frame.paragraphs[0]
     run = p.add_run()
     run.text = year + " Report " + report_round.split("/")[0]
-
-def get_report_round(timestamp):
-    date = datetime.strptime(timestamp, '%Y-%m-%d %H:%M:%S')
-    if date.month in range(1,5):
-        report_round = "1/"+str(date.year)
-    elif date.month in range(5,9):
-        report_round = "2/"+str(date.year)
-    elif date.month in range(9,13):
-        report_round = "3/"+str(date.year)
-    else:
-        report_round = "ERROR"
-    return report_round
 
 def build_report_slide(prs,report):
     # Access placeholders for content slides

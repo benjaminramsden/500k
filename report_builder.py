@@ -88,7 +88,6 @@ def construct_report_data(all_missionaries, report_data):
     for idx, column in enumerate(report_data[0]):
         columns[column] = idx
 
-    print "Headings: {0}".format(report_data[0])
     for row in report_data[1:]:
         if len(row) > columns[u'\u2022Main Story / Report: ']:
             try:
@@ -136,7 +135,7 @@ def construct_report_data(all_missionaries, report_data):
                     except NotImplementedError:
                         continue
                 all_missionaries[missionary_id] = missionary
-            missionary.reports[missionary_id] = report
+            missionary.reports[report.round] = report
 
     print "Report data has been constructed"
 
@@ -154,7 +153,6 @@ def construct_factfile_data(all_missionaries, factfile_data):
     for idx, column in enumerate(factfile_data[0]):
         columns[column] = idx
 
-    print "Headings: {0}".format(factfile_data[0])
     for row in factfile_data[1:]:
         if len(row) > columns[u'MissionField State']:
             # Basics mandatory for a factfile
@@ -164,8 +162,12 @@ def construct_factfile_data(all_missionaries, factfile_data):
                                         row[columns[u'MissionaryFirstName']])
             except NotImplementedError:
                 continue
-            missionary.state = validate_state(
-                row[columns[u'MissionField State']])
+            try:
+                missionary.state = validate_state(
+                    row[columns[u'MissionField State']])
+            except ValueError:
+                continue
+            missionary.pic = row[columns[u'Profile Picture']]
             # Add family and biography
             if len(row) > columns[u'Number of Dependents']:
                 if row[columns[u'Wife / Husband\'s First Name']]:
@@ -203,16 +205,18 @@ def create_powerpoint(missionary):
     create_title_slide(prs, missionary)
 
     counter = 1
-    for report in missionary.reports:
-        print "Creating report slide " + str(counter)
-        build_report_slide(prs, missionary, report)
-        counter+=1
+    for report_no, report in sorted(missionary.reports.iteritems()):
+        for report_split in report.report:
+            print "Creating report slide " + str(counter)
+            build_report_slide(prs, missionary, report, report_split)
+            counter+=1
 
     # TODO - Save the powerpoint in a folder with Missionary ID - discuss with Alex
     path = "C:\Users\\br1\Code\\500k\\{0}_{1}.pptx".format(
-        report["Missionary ID"],
-        report["Missionary"])
+        missionary.id,
+        missionary.surname)
     prs.save(path)
+    print "Reports for {0} have been saved to {1}.".format(missionary.id, path)
     return path
 
 def create_title_slide(prs,missionary):
@@ -249,44 +253,29 @@ def create_title_slide(prs,missionary):
     return prs
 
 def insert_bio(slide, missionary, report):
-    # Define the state acronyms here, this could be moved out at a later date
-    state_dict = {"AN": "Andaman Nicobar",
-                  "AP": "Andhra Pradesh",
-                  "AS": "Assam",
-                  "CH": "Chhattisgarh",
-                  "HR": "Haryana",
-                  "GJ": "Gujarat",
-                  "HP": "Himachal Pradesh",
-                  "JK": "Jammu & Kashmir",
-                  "KA": "Karnataka",
-                  "KL": "Kerala",
-                  "MP": "Madhya Pradesh",
-                  "MH": "Maharashtra",
-                  "OR": "Odisha (Orissa)",
-                  "PB": "Punjab",
-                  "RJ": "Rajasthan",
-                  "TN": "Tamil Nadu",
-                  "TA": "Telangana",
-                  "TR": "Tripura",
-                  "UP": "Uttar Pradesh",
-                  "UK": "Uttarakhand"}
-
-    state_ab = report["Missionary ID"][:2]
     # Insert state
     state_holder = slide.placeholders[2]
     assert state_holder.has_text_frame
     state_holder.text_frame.clear()
     p = state_holder.text_frame.paragraphs[0]
     run = p.add_run()
-    if not missionary.state:
-        missionary.state = state_dict[missionary.id[:2]]
-    run.text = "State: " + missionary.state
+    try:
+        run.text = "State: " + missionary.state
+    except AttributeError:
+        missionary.state = validate_state(missionary.id[:2],
+                                          abbreviation=True,
+                                          convert_to_full=True)
+        run.text = "State: " + missionary.state
 
     # Insert India Map based off state name
     india_pic_holder = slide.placeholders[12]
-    india_pic_holder.insert_picture('C:\Users\\br1\Dropbox\NCM\Reports' +
-        '\!Reporting Workflow\Map Images\\' +
-        missionary.state + '.png')
+    try:
+        india_pic_holder.insert_picture('C:\Users\\br1\Dropbox\NCM\Reports' +
+            '\!Reporting Workflow\Map Images\\' +
+            missionary.state + '.png')
+    except IOError:
+        print "ERROR: Missing state map for {0}, not added".format(
+            missionary.state)
 
     # Insert Name
     name_holder = slide.placeholders[13]
@@ -294,7 +283,10 @@ def insert_bio(slide, missionary, report):
     name_holder.text_frame.clear()
     p = name_holder.text_frame.paragraphs[0]
     run = p.add_run()
-    run.text = report["Missionary"]
+    try:
+        run.text = missionary.first_name + " " + missionary.surname
+    except TypeError:
+        run.text = missionary.surname
 
     bio_holder = slide.placeholders[11]
     assert bio_holder.has_text_frame
@@ -305,12 +297,20 @@ def insert_bio(slide, missionary, report):
     prayer_nos = 0
     baptisms = 0
 
-    for f in range(1,6):
-        key = "Village {}".format(f)
-        if key in report:
-            churches += 1
-            prayer_nos += int(report[key]["People"])
-            baptisms += int(report[key]["Baptisms"])
+    for village in report.villages:
+        churches += 1
+        if village.attendance:
+            try:
+                prayer_nos += int(village.attendance)
+            except ValueError:
+                print "ERROR: Invalid value for attendance {0}".format(
+                    village.attendance)
+        if village.baptisms:
+            try:
+                baptisms += int(village.baptisms)
+            except ValueError:
+                print "ERROR: Invalid value for baptisms {0}".format(
+                    village.baptisms)
 
     bio_line("\n Churches: ", str(churches), p)
     bio_line("\n Coming for Prayer: ", str(prayer_nos), p)
@@ -318,14 +318,12 @@ def insert_bio(slide, missionary, report):
 
     # Download Imgur picture, store off and add to report
     profile_pic_holder = slide.placeholders[10]
-    if report["Imgur ID"]:
-        print("Inserting picture for Missionary ID: {}".format(
-            report["Missionary ID"]))
-        image = get_image(report["Imgur ID"])
-        profile_pic_holder.insert_picture(image)
-    else:
-        print("ERROR: Image missing for Missionary ID: {}".format(
-            report["Missionary ID"]))
+    try:
+        profile_pic_holder.insert_picture(missionary.pic)
+    except AttributeError:
+        print "ERROR: Missionary with ID {0} has no picture".format(
+            missionary.id)
+        # profile_pic_holder.insert_picture(default_pic)
 
     # get_bio_from_factfile(slide,report["Missionary ID"])
     return
@@ -335,17 +333,15 @@ def get_bio_from_factfile(slide,miss_id):
     ff_data = get_all_factfile_data()
 
 def enter_report_title(report, slide):
-    date = datetime.strptime(report["Date"], '%Y-%m-%d %H:%M:%S')
-    year = str(date.year)
-    report_round = get_report_round(report["Date"])
     title_holder = slide.placeholders[0]
     assert title_holder.has_text_frame
     title_holder.text_frame.clear()
     p = title_holder.text_frame.paragraphs[0]
     run = p.add_run()
-    run.text = year + " Report " + report_round.split("/")[0]
+    run.text = (report.round.split("/")[1] + " Report " +
+        report.round.split("/")[0])
 
-def build_report_slide(prs, missionary, report):
+def build_report_slide(prs, missionary, report, report_split):
     # Access placeholders for content slides
     content_slide = prs.slides.add_slide(prs.slide_layouts[0])
 
@@ -353,17 +349,15 @@ def build_report_slide(prs, missionary, report):
     success = insert_bio(content_slide, missionary, report)
 
     # Report title - pull report round out of date
-    enter_report_title(report,content_slide)
+    enter_report_title(report, content_slide)
 
-    # Actual report! Tidy up regex hacks
-    body = report["Report"].replace(">>> ","\n")
-    body = re.sub('[ \t\f\v+]', ' ', body)
+    # Actual report!
     report_holder = content_slide.placeholders[14]
     assert report_holder.has_text_frame
     report_holder.text_frame.clear()
     p = report_holder.text_frame.paragraphs[0]
     run = p.add_run()
-    run.text = body.rstrip()
+    run.text = report_split.rstrip()
 
     # Prayer heading
     prayer_h_holder = content_slide.placeholders[15]
@@ -379,7 +373,7 @@ def build_report_slide(prs, missionary, report):
     prayer_b_holder.text_frame.clear()
     p = prayer_b_holder.text_frame.paragraphs[0]
     run = p.add_run()
-    run.text = report["Prayer"]
+    run.text = "\n".join(report.prayer_rqs)
 
     return success
 

@@ -21,7 +21,25 @@ class Report(object):
             self.historical = False
         self.name = name
         self.id = pid
-        self.report = report
+        print "Report Lengths {0}".format(len(report))
+        if len(report) < 3000:
+            self.report = [report]
+        else:
+            paragraphs = report.split("\n")
+            if len(paragraphs) > 1:
+                temp = paragraphs[0]
+                counter = 0
+                for para in paragraphs[1:]:
+                    (temp + "\n").join(para)
+                    if len(temp) > 1700:
+                        break
+                    self.report = [temp]
+                    counter += 1
+                print "Report split {0}".format(self.report)
+                self.report.extend(paragraphs[counter:])
+            else:
+                print "ERROR: SUPER LONG PARAGRAPH - MUST FIX"
+                self.report = [report]
 
     def get_report_round(self):
         if self.historical:

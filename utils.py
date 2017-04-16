@@ -49,7 +49,7 @@ def build_slide(prs):
     slide_layout = prs.slide_layouts[SLD_LAYOUT_TITLE_AND_CONTENT]
     slide = prs.slides.add_slide(slide_layout)
 
-def validate_state(state):
+def validate_state(state, abbreviation=False, convert_to_full=False):
     state_dict = {"AN": "Andaman Nicobar",
                   "AP": "Andhra Pradesh",
                   "AS": "Assam",
@@ -57,7 +57,7 @@ def validate_state(state):
                   "HR": "Haryana",
                   "GJ": "Gujarat",
                   "HP": "Himachal Pradesh",
-                  "JK": "Jammu & Kashmir",
+                  "JK": "Jammu and Kashmir",
                   "KA": "Karnataka",
                   "KL": "Kerala",
                   "MP": "Madhya Pradesh",
@@ -70,8 +70,17 @@ def validate_state(state):
                   "TR": "Tripura",
                   "UP": "Uttar Pradesh",
                   "UK": "Uttarakhand"}
-    if state in state_dict:
-        return state
+
+    if abbreviation:
+        if state in state_dict.keys():
+            if convert_to_full:
+                return state_dict[state]
+            else:
+                return state
+        else:
+            raise ValueError("Invalid state {0}".format(state))
     else:
-        print "Invalid state"
-        return None
+        if state[0] in state_dict:
+            return state
+        else:
+            raise ValueError("Invalid state {0}".format(state))

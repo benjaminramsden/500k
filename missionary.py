@@ -14,7 +14,7 @@ class Adult(Person):
     """Uses the information to build adult data."""
     def __init__(self, surname, first_name=None):
         super(Adult, self).__init__(first_name)
-        self.surname = surname
+        self.surname = surname.rstrip('\r')
 
 class Missionary(Adult):
     """
@@ -29,7 +29,12 @@ class Missionary(Adult):
             raise NotImplementedError(
                 "Invalid ID {0}, cannot process".format(id))
         else:
-            self.id = id
+            try:
+                validate_state(id[:2], True)
+                self.id = id
+            except ValueError:
+                raise NotImplementedError(
+                    "Invalid ID {0}, cannot process".format(id))
 
 class Spouse(Adult):
     """

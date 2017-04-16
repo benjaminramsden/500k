@@ -25,7 +25,11 @@ class Missionary(Adult):
         super(Missionary, self).__init__(surname, first_name)
         self.reports = {}
         self.children = {}
-        self.id = id
+        if not id or len(id) is not 6:
+            raise NotImplementedError(
+                "Invalid ID {0}, cannot process".format(id))
+        else:
+            self.id = id
 
 class Spouse(Adult):
     """

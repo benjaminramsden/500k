@@ -35,8 +35,8 @@ def main(argv=None):
     # Time to create the presentations, loop around for every single missionary
     # TODO - In future make sure only missionaries with new reports get
     # generated
-    for miss_id, miss_dict in all_missionaries.iteritems():
-        pptx = create_powerpoint(miss_dict)
+    for miss_id, missionary in all_missionaries.iteritems():
+        pptx = create_powerpoint(missionary)
 
         # Export to pdf - this is the slowest part
         # if pptx:
@@ -122,13 +122,19 @@ def construct_report_data(all_missionaries, report_data):
                     missionary_id)
                 names = report.name.split(" ")
                 if len(names) > 1:
-                    missionary = Missionary(missionary_id,
-                                            names[-1],
-                                            names[-2])
+                    try:
+                        missionary = Missionary(missionary_id,
+                                                names[-1],
+                                                names[-2])
+                    except NotImplementedError:
+                        continue
                 else:
-                    missionary = Missionary(missionary_id,
-                                            names[-1],
-                                            None)
+                    try:
+                        missionary = Missionary(missionary_id,
+                                                names[-1],
+                                                None)
+                    except NotImplementedError:
+                        continue
                 all_missionaries[missionary_id] = missionary
             missionary.reports[missionary_id] = report
 
@@ -152,9 +158,12 @@ def construct_factfile_data(all_missionaries, factfile_data):
     for row in factfile_data[1:]:
         if len(row) > columns[u'MissionField State']:
             # Basics mandatory for a factfile
-            missionary = Missionary(row[columns[u'ID (new)']],
-                                    row[columns[u'MissionarySecondName']],
-                                    row[columns[u'MissionaryFirstName']])
+            try:
+                missionary = Missionary(row[columns[u'ID (new)']],
+                                        row[columns[u'MissionarySecondName']],
+                                        row[columns[u'MissionaryFirstName']])
+            except NotImplementedError:
+                continue
             missionary.state = validate_state(
                 row[columns[u'MissionField State']])
             # Add family and biography
@@ -184,20 +193,19 @@ def construct_factfile_data(all_missionaries, factfile_data):
 
     print "Factfile data has been constructed"
 
-def create_powerpoint(miss_dict):
+def create_powerpoint(missionary):
     # Import presentation
     print "Opening powerpoint template"
     path = "C:\Users\\br1\Dropbox\NCM\Reports\Ben Report Automation\\"
     prs = Presentation(path + "Master Report Template.pptx")
 
-    # Grab the first report in the dictionary for this info, it doesn't matter
-    # which
-    create_title_slide(prs,miss_dict.itervalues().next())
+    # Title slide - requires name and ID only.
+    create_title_slide(prs, missionary)
 
     counter = 1
-    for report in miss_dict.itervalues():
+    for report in missionary.reports:
         print "Creating report slide " + str(counter)
-        build_report_slide(prs,report)
+        build_report_slide(prs, missionary, report)
         counter+=1
 
     # TODO - Save the powerpoint in a folder with Missionary ID - discuss with Alex
@@ -207,7 +215,7 @@ def create_powerpoint(miss_dict):
     prs.save(path)
     return path
 
-def create_title_slide(prs,report):
+def create_title_slide(prs,missionary):
     # Access placeholders for Title slide
     title_slide = prs.slides[0]
 
@@ -217,7 +225,10 @@ def create_title_slide(prs,report):
     name_holder.text_frame.clear()
     p = name_holder.text_frame.paragraphs[0]
     run = p.add_run()
-    run.text = report["Missionary"]
+    if missionary.first_name:
+        run.text = missionary.first_name + " " + missionary.surname
+    else:
+        run.text = missionary.surname
 
     # Insert Missionary ID
     miss_id_holder = title_slide.placeholders[11]
@@ -225,7 +236,7 @@ def create_title_slide(prs,report):
     miss_id_holder.text_frame.clear()
     p = miss_id_holder.text_frame.paragraphs[0]
     run = p.add_run()
-    run.text = "Missionary ID: " + report["Missionary ID"]
+    run.text = "Missionary ID: " + missionary.id
 
     # Insert current year
     miss_id_holder = title_slide.placeholders[1]
@@ -237,7 +248,7 @@ def create_title_slide(prs,report):
 
     return prs
 
-def insert_bio(slide,report):
+def insert_bio(slide, missionary, report):
     # Define the state acronyms here, this could be moved out at a later date
     state_dict = {"AN": "Andaman Nicobar",
                   "AP": "Andhra Pradesh",
@@ -267,19 +278,15 @@ def insert_bio(slide,report):
     state_holder.text_frame.clear()
     p = state_holder.text_frame.paragraphs[0]
     run = p.add_run()
-    try:
-        run.text = "State: " + state_dict[state_ab]
-    except KeyError:
-        print("ERROR: Report dated {0} for missionary {1} has incorrect "
-            "Missionary ID, chase Shijo".format(report["Date"],
-                                                report["Missionary"]))
-        return 1
+    if not missionary.state:
+        missionary.state = state_dict[missionary.id[:2]]
+    run.text = "State: " + missionary.state
 
     # Insert India Map based off state name
     india_pic_holder = slide.placeholders[12]
     india_pic_holder.insert_picture('C:\Users\\br1\Dropbox\NCM\Reports' +
         '\!Reporting Workflow\Map Images\\' +
-        state_dict[state_ab] + '.png')
+        missionary.state + '.png')
 
     # Insert Name
     name_holder = slide.placeholders[13]
@@ -338,12 +345,12 @@ def enter_report_title(report, slide):
     run = p.add_run()
     run.text = year + " Report " + report_round.split("/")[0]
 
-def build_report_slide(prs,report):
+def build_report_slide(prs, missionary, report):
     # Access placeholders for content slides
     content_slide = prs.slides.add_slide(prs.slide_layouts[0])
 
     # Add biography, mainly from factfile
-    success = insert_bio(content_slide, report)
+    success = insert_bio(content_slide, missionary, report)
 
     # Report title - pull report round out of date
     enter_report_title(report,content_slide)

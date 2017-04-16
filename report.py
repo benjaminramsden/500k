@@ -7,13 +7,15 @@ class Report(object):
     """docstring for Report."""
     def __init__(self, date, name, pid, report):
         super(Report, self).__init__()
-        if len(date) < 8:
+        if not date:
+            raise NotImplementedError(
+                "No date for report ID {0}, cannot process".format(pid))
+        elif len(date) < 8:
             self._date = date
             self.historical = True
         else:
             date_list = date.split(" ")
             date_list[1] = date_list[1].zfill(2)
-            print date_list[1]
             self._date = datetime.strptime(" ".join(date_list),
                                           '%a %d %b %Y at %H:%M')
             self.historical = False

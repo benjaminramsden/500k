@@ -91,10 +91,13 @@ def construct_report_data(all_missionaries, report_data):
     print "Headings: {0}".format(report_data[0])
     for row in report_data[1:]:
         if len(row) > columns[u'\u2022Main Story / Report: ']:
-            report = Report(row[columns['Date (Pretty)']],
-                            row[columns[u'\u2022Missionary Name: ']],
-                            row[columns[u'\u2022MissionaryID: ']],
-                            row[columns[u'\u2022Main Story / Report: ']])
+            try:
+                report = Report(row[columns['Date (Pretty)']],
+                                row[columns[u'\u2022Missionary Name: ']],
+                                row[columns[u'\u2022MissionaryID: ']],
+                                row[columns[u'\u2022Main Story / Report: ']])
+            except NotImplementedError:
+                continue
             villages = []
             prayer_rqs = []
             for i in range(1,6):

@@ -8,6 +8,7 @@ from sheets_api import *
 from report import Report
 from village import Village
 from missionary import Missionary, Child, Spouse
+from operator import itemgetter
 
 # This script conducts the following:
 # - Gets the information on a missionary based on Miss ID (gets all)
@@ -38,6 +39,8 @@ def main(argv=None):
     for miss_id, missionary in all_missionaries.iteritems():
         pptx = create_powerpoint(missionary)
 
+    # TESTING
+    # pptx = create_powerpoint(all_missionaries["PB6L1K"])
         # Export to pdf - this is the slowest part
         # if pptx:
         #     PPTtoPDF(pptx, pptx.split(".")[0] + ".pdf")
@@ -136,6 +139,7 @@ def construct_report_data(all_missionaries, report_data):
                         continue
                 all_missionaries[missionary_id] = missionary
             missionary.reports[report.round] = report
+            print "Report round {0} added to {1}".format(report.round,missionary_id)
 
     print "Report data has been constructed"
 
@@ -205,9 +209,13 @@ def create_powerpoint(missionary):
     create_title_slide(prs, missionary)
 
     counter = 1
-    for report_no, report in sorted(missionary.reports.iteritems()):
+    print "report keys: {0}".format(missionary.reports.keys())
+    for report_no, report in sorted(sorted(missionary.reports.iteritems(),
+                                           key=itemgetter(0),
+                                           reverse=True),
+                                    key=itemgetter(1),
+                                    reverse=True):
         for report_split in report.report:
-            print "Creating report slide " + str(counter)
             build_report_slide(prs, missionary, report, report_split)
             counter+=1
 
@@ -323,7 +331,8 @@ def insert_bio(slide, missionary, report):
     except AttributeError:
         print "ERROR: Missionary with ID {0} has no picture".format(
             missionary.id)
-        # profile_pic_holder.insert_picture(default_pic)
+        profile_pic_holder.insert_picture("C:\Users\\br1\Dropbox\NCM\Reports" +
+            "\Ben Report Automation\headshot.png")
 
     # get_bio_from_factfile(slide,report["Missionary ID"])
     return
@@ -338,8 +347,10 @@ def enter_report_title(report, slide):
     title_holder.text_frame.clear()
     p = title_holder.text_frame.paragraphs[0]
     run = p.add_run()
-    run.text = (report.round.split("/")[1] + " Report " +
-        report.round.split("/")[0])
+    if report.round:
+        run.text = str(report.round[1]) + " Report " + str(report.round[0])
+    else:
+        run.text = "Report"
 
 def build_report_slide(prs, missionary, report, report_split):
     # Access placeholders for content slides

@@ -1,4 +1,5 @@
 from datetime import datetime
+from utils import validate_state
 
 """
 Class for reports
@@ -7,6 +8,12 @@ class Report(object):
     """docstring for Report."""
     def __init__(self, date, name, pid, report):
         super(Report, self).__init__()
+        self.set_date(date, pid)
+        self.name = name
+        self.validate_id(pid)
+        self.add_reports(report)
+
+    def set_date(self, date, pid):
         if not date:
             print "ERROR: No date for report ID {0}".format(pid)
             self._date = None
@@ -19,31 +26,54 @@ class Report(object):
             self._date = datetime.strptime(" ".join(date_list),
                                           '%a %d %b %Y at %H:%M')
             self.historical = False
-        self.name = name
-        self.id = pid
-        print "Report Lengths {0}".format(len(report))
+
+    def add_reports(self, report):
         if len(report) < 3000:
             self.report = [report]
         else:
             paragraphs = report.split("\n")
-            print "Number of paragraphs: {0}".format(len(paragraphs))
             if len(paragraphs) > 1:
                 temp = paragraphs[0]
                 self.report = [temp]
-                print "self.report = {0}".format(self.report)
                 counter = 1
                 for para in paragraphs[1:]:
                     temp = temp + "\n" + para
-                    print u"Length of combo {0}".format(len(temp))
                     if len(temp) > 3000:
                         break
                     self.report = [temp]
                     counter += 1
                 self.report.extend(paragraphs[counter:])
-                print "Report split: {0}".format(self.report)
             else:
-                print "ERROR: SUPER LONG PARAGRAPH - MUST FIX"
-                self.report = [report]
+                print "CHECK: {0},{1} has no paragraphs".format(
+                    self.id,
+                    self._date)
+                # sentences = report.split(".")
+                # temp = sentences[0]
+                # self.report = [temp]
+                # counter = 1
+                # for sentence in sentences[1:]:
+                #     if counter % 5:
+                #         temp = temp + ".\n" + sentence
+                #     else:
+                #         temp = temp + "." + sentence
+                #
+                #     if len(temp) > 3000:
+                #         break
+                #     self.report = [temp]
+                #     counter +=1
+                # self.report.extend(sentences[counter:])
+
+    def validate_id(self, pid):
+        if len(pid) != 6:
+            raise NotImplementedError(
+                'Missionary ID wrong length, ID: {0}'.format(pid))
+        else:
+            try:
+                validate_state(pid[:2], abbreviation=True)
+                self.id = pid
+            except ValueError:
+                print "ERROR: Invalid ID {0}".format(pid)
+                raise NotImplementedError
 
     def get_report_round(self):
         if not self._date:

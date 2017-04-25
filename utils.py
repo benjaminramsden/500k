@@ -50,7 +50,7 @@ def build_slide(prs):
     slide = prs.slides.add_slide(slide_layout)
 
 def validate_state(state, abbreviation=False, convert_to_full=False):
-    state_dict = {"AN": "Andaman Nicobar",
+    state_dict = {"AN": "Andaman Islands",
                   "AP": "Andhra Pradesh",
                   "AS": "Assam",
                   "CH": "Chhattisgarh",

@@ -36,6 +36,8 @@ def main(argv=None):
     # Time to create the presentations, loop around for every single missionary
     # TODO - In future make sure only missionaries with new reports get
     # generated
+    print "Creating powerpoints for {0} missionaries".format(
+        len(all_missionaries))
     for miss_id, missionary in all_missionaries.iteritems():
         pptx = create_powerpoint(missionary)
 
@@ -139,7 +141,6 @@ def construct_report_data(all_missionaries, report_data):
                         continue
                 all_missionaries[missionary_id] = missionary
             missionary.reports[report.round] = report
-            print "Report round {0} added to {1}".format(report.round,missionary_id)
 
     print "Report data has been constructed"
 
@@ -201,7 +202,6 @@ def construct_factfile_data(all_missionaries, factfile_data):
 
 def create_powerpoint(missionary):
     # Import presentation
-    print "Opening powerpoint template"
     path = "C:\Users\\br1\Dropbox\NCM\Reports\Ben Report Automation\\"
     prs = Presentation(path + "Master Report Template.pptx")
 
@@ -209,7 +209,6 @@ def create_powerpoint(missionary):
     create_title_slide(prs, missionary)
 
     counter = 1
-    print "report keys: {0}".format(missionary.reports.keys())
     for report_no, report in sorted(sorted(missionary.reports.iteritems(),
                                            key=itemgetter(0),
                                            reverse=True),
@@ -329,8 +328,6 @@ def insert_bio(slide, missionary, report):
     try:
         profile_pic_holder.insert_picture(missionary.pic)
     except AttributeError:
-        print "ERROR: Missionary with ID {0} has no picture".format(
-            missionary.id)
         profile_pic_holder.insert_picture("C:\Users\\br1\Dropbox\NCM\Reports" +
             "\Ben Report Automation\headshot.png")
 

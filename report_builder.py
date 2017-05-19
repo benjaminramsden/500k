@@ -10,6 +10,7 @@ from village import Village
 from missionary import Missionary, Child, Spouse
 from operator import itemgetter
 import threading
+import pythoncom
 
 # This script conducts the following:
 # - Gets the information on a missionary based on Miss ID (gets all)
@@ -41,18 +42,10 @@ def main(argv=None):
         len(all_missionaries))
     threads = []
     for miss_id, missionary in all_missionaries.iteritems():
-        t = threading.Thread(target=create_powerpoint, args=(missionary,))
+        t = threading.Thread(target=create_powerpoint_pdf,
+                             args=(missionary, miss_id))
         threads.append(t)
         t.start()
-        #pptx = create_powerpoint(missionary)
-
-    # TESTING
-    # pptx = create_powerpoint(all_missionaries["PB6L1K"])
-        # Export to pdf - this is the slowest part
-        # if pptx:
-        #     PPTtoPDF(pptx, pptx.split(".")[0] + ".pdf")
-        # else:
-        #     print "Build failed for missionary with ID:" + miss_id
 
     # TODO - Now upload all these reports to Google Drive via API, saving the
     # URL/ID of the report back into Google Sheets
@@ -118,7 +111,6 @@ def construct_report_data(all_missionaries, report_data):
             for i in range(1,9):
                 if (len(row) > columns["P-R-" + str(i) + ": "] and
                     row[columns["P-R-" + str(i) + ": "]]):
-                    print
                     prayer_rqs.append(row[columns["P-R-" + str(i) + ": "]])
             report.villages = villages
             report.prayer_rqs = prayer_rqs
@@ -232,6 +224,16 @@ def create_powerpoint(missionary):
     prs.save(path)
     print "Reports for {0} have been saved to {1}.".format(missionary.id, path)
     return path
+
+def create_powerpoint_pdf(missionary, miss_id):
+    path = create_powerpoint(missionary)
+
+    pythoncom.CoInitialize()
+    # Export to pdf - this is the slowest part so thread.
+    if path:
+        PPTtoPDF(path, path.split(".")[0] + ".pdf")
+    else:
+        print "Build PDF failed for missionary with ID:" + miss_id
 
 def create_title_slide(prs,missionary):
     # Access placeholders for Title slide

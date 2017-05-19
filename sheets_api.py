@@ -49,7 +49,7 @@ def get_credentials():
         print('Storing credentials to ' + credential_path)
     return credentials
 
-def get_all_missionary_reports():
+def get_all_missionary_reports(test=False):
     # Log into Google and extract all column data.
     credentials = get_credentials()
     http = credentials.authorize(httplib2.Http())
@@ -59,7 +59,10 @@ def get_all_missionary_reports():
                               discoveryServiceUrl=discoveryUrl)
 
     spreadsheetId = '1AR7akf5vREy8YpROIDBb_wQxCtGbhCLOJ6GweXxYZB8'
-    rangeName = 'Extractor 2!A2:BA1000'
+    if test:
+        rangeName = 'Extractor 2!A1:BZ5'
+    else:
+        rangeName = 'Extractor 2!A1:BZ1000'
     result = service.spreadsheets().values().get(
         spreadsheetId=spreadsheetId, range=rangeName).execute()
     values = result.get('values', [])
@@ -100,9 +103,9 @@ def update_sheet(data,imgur=False):
 
     spreadsheet_id = '1AR7akf5vREy8YpROIDBb_wQxCtGbhCLOJ6GweXxYZB8'
     if imgur:
-        range_name = 'Extractor 2!AX3:AX1000'
+        range_name = 'Extractor 2!AX1:AX1000'
     else:
-        range_name = 'Extractor 2!A3:BA1000'
+        range_name = 'Extractor 2!A1:BZ1000'
 
     body = {
         'values': data
@@ -121,7 +124,7 @@ def get_all_factfile_data():
                               discoveryServiceUrl=discoveryUrl)
 
     spreadsheetId = '1gzN08u0gvBLn2Qg5_sevP6sdxWGkoc_XmpvuFxoHLyo'
-    rangeName = 'Sheet1!A3:EA1000'
+    rangeName = 'Metadata!A3:EA1000'
     result = service.spreadsheets().values().get(
         spreadsheetId=spreadsheetId, range=rangeName).execute()
     values = result.get('values', [])

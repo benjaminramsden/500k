@@ -9,6 +9,7 @@ from report import Report
 from village import Village
 from missionary import Missionary, Child, Spouse
 from operator import itemgetter
+import threading
 
 # This script conducts the following:
 # - Gets the information on a missionary based on Miss ID (gets all)
@@ -25,7 +26,7 @@ from operator import itemgetter
 def main(argv=None):
     # Gather all information from the spreadsheet. Returned as list of lists
     # where each list is a row of cells.
-    report_data = get_all_missionary_reports()
+    report_data = get_all_missionary_reports(test=True)
 
     # Add in the factfile information
     factfile_data = get_all_factfile_data()
@@ -38,8 +39,12 @@ def main(argv=None):
     # generated
     print "Creating powerpoints for {0} missionaries".format(
         len(all_missionaries))
+    threads = []
     for miss_id, missionary in all_missionaries.iteritems():
-        pptx = create_powerpoint(missionary)
+        t = threading.Thread(target=create_powerpoint, args=(missionary,))
+        threads.append(t)
+        t.start()
+        #pptx = create_powerpoint(missionary)
 
     # TESTING
     # pptx = create_powerpoint(all_missionaries["PB6L1K"])
@@ -111,7 +116,9 @@ def construct_report_data(all_missionaries, report_data):
                                 row[columns[u'\u2022V' + str(i) + 'N: ']],
                                 row[columns[u'\u2022V' + str(i) + 'B: ']]))
             for i in range(1,9):
-                if len(row) > columns["P-R-" + str(i) + ": "]:
+                if (len(row) > columns["P-R-" + str(i) + ": "] and
+                    row[columns["P-R-" + str(i) + ": "]]):
+                    print
                     prayer_rqs.append(row[columns["P-R-" + str(i) + ": "]])
             report.villages = villages
             report.prayer_rqs = prayer_rqs
@@ -159,7 +166,7 @@ def construct_factfile_data(all_missionaries, factfile_data):
         columns[column] = idx
 
     for row in factfile_data[1:]:
-        if len(row) > columns[u'MissionField State']:
+        if len(row) > columns[u'Profile Picture']:
             # Basics mandatory for a factfile
             try:
                 missionary = Missionary(row[columns[u'ID (new)']],

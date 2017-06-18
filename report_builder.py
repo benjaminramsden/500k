@@ -9,8 +9,10 @@ from report import Report
 from village import Village
 from missionary import Missionary, Child, Spouse
 from operator import itemgetter
-import threading
+from Queue import Queue
+from threading import Thread
 import pythoncom
+import logging
 
 # This script conducts the following:
 # - Gets the information on a missionary based on Miss ID (gets all)
@@ -25,9 +27,10 @@ import pythoncom
 
 
 def main(argv=None):
+    logging.basicConfig(filename='diags.log',level=logging.WARNING)
     # Gather all information from the spreadsheet. Returned as list of lists
     # where each list is a row of cells.
-    report_data = get_all_missionary_reports(test=True)
+    report_data = get_all_missionary_reports(test=False)
 
     # Add in the factfile information
     factfile_data = get_all_factfile_data()
@@ -38,14 +41,21 @@ def main(argv=None):
     # Time to create the presentations, loop around for every single missionary
     # TODO - In future make sure only missionaries with new reports get
     # generated
-    print "Creating powerpoints for {0} missionaries".format(
-        len(all_missionaries))
-    threads = []
+    logging.info("Creating powerpoints for {0} missionaries".format(
+        len(all_missionaries)))
+
+    q = Queue(maxsize=0)
+    num_threads = 10
+
+    for i in range(num_threads):
+        worker = Thread(target=create_powerpoint_pdf, args=(q,))
+        worker.setDaemon(True)
+        worker.start()
+
     for miss_id, missionary in all_missionaries.iteritems():
-        t = threading.Thread(target=create_powerpoint_pdf,
-                             args=(missionary, miss_id))
-        threads.append(t)
-        t.start()
+        q.put((missionary, miss_id))
+
+    q.join()
 
     # TODO - Now upload all these reports to Google Drive via API, saving the
     # URL/ID of the report back into Google Sheets
@@ -81,7 +91,7 @@ def construct_report_data(all_missionaries, report_data):
     #       ...
     #  -> Missionary 2
     #   ...
-    print "Constructing report data"
+    logging.info("Constructing report data")
 
     # As we may change the order of the columns from time to time and need to
     # make this sustainable for any changes, create a dictionary of column
@@ -121,8 +131,8 @@ def construct_report_data(all_missionaries, report_data):
                 missionary = all_missionaries[missionary_id]
             else:
                 # New missionary, create new missionary and add report.
-                print "Missionary not found, does {0} exist?".format(
-                    missionary_id)
+                logging.warning("Missionary not found, does {0} exist?".format(
+                    missionary_id))
                 names = report.name.split(" ")
                 if len(names) > 1:
                     try:
@@ -141,13 +151,13 @@ def construct_report_data(all_missionaries, report_data):
                 all_missionaries[missionary_id] = missionary
             missionary.reports[report.round] = report
 
-    print "Report data has been constructed"
+    logging.info("Report data has been constructed")
 
 def construct_factfile_data(all_missionaries, factfile_data):
     """
     With missionary reports constructed, now add the factfile data to the side
     """
-    print "Constructing factfile data"
+    logging.info("Constructing factfile data")
 
     # As we may change the order of the columns from time to time and need to
     # make this sustainable for any changes, create a dictionary of column
@@ -197,7 +207,7 @@ def construct_factfile_data(all_missionaries, factfile_data):
                                 row[columns[u'V' + str(i) + ' B']]))
             missionary.villages = villages
 
-    print "Factfile data has been constructed"
+    logging.info("Factfile data has been constructed")
 
 def create_powerpoint(missionary):
     # Import presentation
@@ -222,10 +232,12 @@ def create_powerpoint(missionary):
         missionary.id,
         missionary.surname)
     prs.save(path)
-    print "Reports for {0} have been saved to {1}.".format(missionary.id, path)
+    logging.info("Reports for {0} have been saved to {1}.".format(
+                    missionary.id, path))
     return path
 
-def create_powerpoint_pdf(missionary, miss_id):
+def create_powerpoint_pdf(q):
+    (missionary, miss_id) = q.get()
     path = create_powerpoint(missionary)
 
     pythoncom.CoInitialize()
@@ -233,7 +245,8 @@ def create_powerpoint_pdf(missionary, miss_id):
     if path:
         PPTtoPDF(path, path.split(".")[0] + ".pdf")
     else:
-        print "Build PDF failed for missionary with ID:" + miss_id
+        logging.error("Build PDF failed for missionary with ID:" + miss_id)
+    q.task_done()
 
 def create_title_slide(prs,missionary):
     # Access placeholders for Title slide
@@ -290,8 +303,8 @@ def insert_bio(slide, missionary, report):
             '\!Reporting Workflow\Map Images\\' +
             missionary.state + '.png')
     except IOError:
-        print "ERROR: Missing state map for {0}, not added".format(
-            missionary.state)
+        logging.error("ERROR: Missing state map for {0}, not added".format(
+            missionary.state))
 
     # Insert Name
     name_holder = slide.placeholders[13]
@@ -319,14 +332,14 @@ def insert_bio(slide, missionary, report):
             try:
                 prayer_nos += int(village.attendance)
             except ValueError:
-                print "ERROR: Invalid value for attendance {0}".format(
-                    village.attendance)
+                logging.error("ERROR: Invalid value for attendance {0}".format(
+                    village.attendance))
         if village.baptisms:
             try:
                 baptisms += int(village.baptisms)
             except ValueError:
-                print "ERROR: Invalid value for baptisms {0}".format(
-                    village.baptisms)
+                logging.error("ERROR: Invalid value for baptisms {0}".format(
+                    village.baptisms))
 
     bio_line("\n Churches: ", str(churches), p)
     bio_line("\n Coming for Prayer: ", str(prayer_nos), p)

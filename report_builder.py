@@ -2,7 +2,10 @@
 from pptx import Presentation
 from docx import Document
 from datetime import datetime
-import sys, os, shutil, re
+import sys
+import os
+import shutil
+import re
 from utils import *
 from sheets_api import *
 from report import Report
@@ -27,7 +30,7 @@ import logging
 
 
 def main(argv=None):
-    logging.basicConfig(filename='diags.log',level=logging.WARNING)
+    logging.basicConfig(filename='diags.log', level=logging.INFO)
     # Gather all information from the spreadsheet. Returned as list of lists
     # where each list is a row of cells.
     report_data = get_all_missionary_reports(test=False)
@@ -62,6 +65,7 @@ def main(argv=None):
 
     return 0
 
+
 def construct_data(report_data, factfile_data):
     """
     Take from the two different spreadsheets to create a total view of all the
@@ -72,6 +76,7 @@ def construct_data(report_data, factfile_data):
     construct_factfile_data(all_missionaries, factfile_data)
     construct_report_data(all_missionaries, report_data)
     return all_missionaries
+
 
 def construct_report_data(all_missionaries, report_data):
     # For all the missionaries, arrange data in this structure:
@@ -112,22 +117,22 @@ def construct_report_data(all_missionaries, report_data):
                 continue
             villages = []
             prayer_rqs = []
-            for i in range(1,6):
+            for i in range(1, 6):
                 if row[columns[u'\u2022V' + str(i) + ': ']]:
                     villages.append(
                         Village(row[columns[u'\u2022V' + str(i) + ': ']],
                                 row[columns[u'\u2022V' + str(i) + 'N: ']],
                                 row[columns[u'\u2022V' + str(i) + 'B: ']]))
-            for i in range(1,9):
+            for i in range(1, 9):
                 if (len(row) > columns["P-R-" + str(i) + ": "] and
-                    row[columns["P-R-" + str(i) + ": "]]):
+                        row[columns["P-R-" + str(i) + ": "]]):
                     prayer_rqs.append(row[columns["P-R-" + str(i) + ": "]])
             report.villages = villages
             report.prayer_rqs = prayer_rqs
             report.round = report.get_report_round()
             missionary_id = report.id
             if missionary_id in all_missionaries.keys():
-                # Missionary already exists, add report to missionary dictionary
+                # Missionary already exists, add report to dictionary
                 missionary = all_missionaries[missionary_id]
             else:
                 # New missionary, create new missionary and add report.
@@ -152,6 +157,7 @@ def construct_report_data(all_missionaries, report_data):
             missionary.reports[report.round] = report
 
     logging.info("Report data has been constructed")
+
 
 def construct_factfile_data(all_missionaries, factfile_data):
     """
@@ -200,7 +206,7 @@ def construct_factfile_data(all_missionaries, factfile_data):
             prayer_rqs = []
             for i in range(1, 6):
                 if (len(row) > columns[u'V' + str(i) + ' B'] and
-                    row[columns[u'V' + str(i)]]):
+                        row[columns[u'V' + str(i)]]):
                     villages.append(
                         Village(row[columns[u'V' + str(i)]],
                                 row[columns[u'V' + str(i) + ' N']],
@@ -208,6 +214,7 @@ def construct_factfile_data(all_missionaries, factfile_data):
             missionary.villages = villages
 
     logging.info("Factfile data has been constructed")
+
 
 def create_powerpoint(missionary):
     # Import presentation
@@ -225,9 +232,9 @@ def create_powerpoint(missionary):
                                     reverse=True):
         for report_split in report.report:
             build_report_slide(prs, missionary, report, report_split)
-            counter+=1
+            counter += 1
 
-    # TODO - Save the powerpoint in a folder with Missionary ID - discuss with Alex
+    # TODO - Save the powerpoint in a folder with Missionary ID
     path = "C:\Users\\br1\Code\\500k\\{0}_{1}.pptx".format(
         missionary.id,
         missionary.surname)
@@ -236,19 +243,29 @@ def create_powerpoint(missionary):
                     missionary.id, path))
     return path
 
+
 def create_powerpoint_pdf(q):
-    (missionary, miss_id) = q.get()
-    path = create_powerpoint(missionary)
+    while True:
+        try:
+            (missionary, miss_id) = q.get()
+            path = create_powerpoint(missionary)
 
-    pythoncom.CoInitialize()
-    # Export to pdf - this is the slowest part so thread.
-    if path:
-        PPTtoPDF(path, path.split(".")[0] + ".pdf")
-    else:
-        logging.error("Build PDF failed for missionary with ID:" + miss_id)
-    q.task_done()
+            pythoncom.CoInitialize()
+            # Export to pdf - this is the slowest part so thread.
+            if path:
+                PPTtoPDF(path, path.split(".")[0] + ".pdf")
+            else:
+                logging.error(
+                    "Build PDF failed for missionary with ID: {0}".format(
+                        miss_id))
+        except:
+            logging.error("Thread {0} has died!".format(
+                          threading.current_thread().name))
+        finally:
+            q.task_done()
 
-def create_title_slide(prs,missionary):
+
+def create_title_slide(prs, missionary):
     # Access placeholders for Title slide
     title_slide = prs.slides[0]
 
@@ -281,6 +298,7 @@ def create_title_slide(prs,missionary):
 
     return prs
 
+
 def insert_bio(slide, missionary, report):
     # Insert state
     state_holder = slide.placeholders[2]
@@ -300,8 +318,8 @@ def insert_bio(slide, missionary, report):
     india_pic_holder = slide.placeholders[12]
     try:
         india_pic_holder.insert_picture('C:\Users\\br1\Dropbox\NCM\Reports' +
-            '\!Reporting Workflow\Map Images\\' +
-            missionary.state + '.png')
+                                        '\!Reporting Workflow\Map Images\\' +
+                                        missionary.state + '.png')
     except IOError:
         logging.error("ERROR: Missing state map for {0}, not added".format(
             missionary.state))
@@ -350,15 +368,18 @@ def insert_bio(slide, missionary, report):
     try:
         profile_pic_holder.insert_picture(missionary.pic)
     except AttributeError:
-        profile_pic_holder.insert_picture("C:\Users\\br1\Dropbox\NCM\Reports" +
-            "\Ben Report Automation\headshot.png")
+        profile_pic_holder.insert_picture(
+            "C:\Users\\br1\Dropbox\NCM\Reports\Ben Report Automation" +
+            "\headshot.png")
 
     # get_bio_from_factfile(slide,report["Missionary ID"])
     return
 
-def get_bio_from_factfile(slide,miss_id):
+
+def get_bio_from_factfile(slide, miss_id):
     # Pull down info for missionary based off missionary ID from factfile sheet
     ff_data = get_all_factfile_data()
+
 
 def enter_report_title(report, slide):
     title_holder = slide.placeholders[0]
@@ -370,6 +391,7 @@ def enter_report_title(report, slide):
         run.text = str(report.round[1]) + " Report " + str(report.round[0])
     else:
         run.text = "Report"
+
 
 def build_report_slide(prs, missionary, report, report_split):
     # Access placeholders for content slides

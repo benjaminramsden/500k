@@ -44,10 +44,11 @@ def get_credentials():
         flow.user_agent = APPLICATION_NAME
         if flags:
             credentials = tools.run_flow(flow, store, flags)
-        else: # Needed only for compatibility with Python 2.6
+        else:  # Needed only for compatibility with Python 2.6
             credentials = tools.run(flow, store)
         print('Storing credentials to ' + credential_path)
     return credentials
+
 
 def get_all_missionary_reports(test=False):
     # Log into Google and extract all column data.
@@ -71,6 +72,7 @@ def get_all_missionary_reports(test=False):
     else:
         return values
 
+
 # Once the report in PDF format has been generated, upload to Google Drive
 def upload_report(pdf_path):
     """
@@ -80,7 +82,7 @@ def upload_report(pdf_path):
     http = credentials.authorize(httplib2.Http())
     drive_service = discovery.build('drive', 'v3', http=http)
 
-    file_metadata = { 'name' : pdf_path.split("\\")[-1] }
+    file_metadata = {'name': pdf_path.split("\\")[-1]}
     media = MediaFileUpload(pdf_path,
                             mimetype='application/pdf',
                             resumable=True)
@@ -91,8 +93,9 @@ def upload_report(pdf_path):
     drive_url = 'https://www.googleapis.com/drive/v3/files/'
     return drive_url + file.get('id')
 
+
 # Post updated sheet to Google
-def update_sheet(data,imgur=False):
+def update_sheet(data, imgur=False):
     # Log into Google and extract all column data.
     credentials = get_credentials()
     http = credentials.authorize(httplib2.Http())
@@ -113,6 +116,7 @@ def update_sheet(data,imgur=False):
     return service.spreadsheets().values().update(
         spreadsheetId=spreadsheet_id, range=range_name,
         valueInputOption="RAW", body=body).execute()
+
 
 def get_all_factfile_data():
     # Log into Google and extract all column data.

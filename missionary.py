@@ -4,6 +4,7 @@ Class describing a missionary
 from datetime import datetime
 from utils import validate_state
 
+
 class Person(object):
     """Used to detail basic information on a person"""
     def __init__(self, first_name=None):
@@ -11,11 +12,13 @@ class Person(object):
         if first_name:
             self.first_name = first_name.title()
 
+
 class Adult(Person):
     """Uses the information to build adult data."""
     def __init__(self, surname, first_name=None):
         super(Adult, self).__init__(first_name)
         self.surname = surname.rstrip('\r').title()
+
 
 class Missionary(Adult):
     """
@@ -37,12 +40,14 @@ class Missionary(Adult):
                 raise NotImplementedError(
                     "Invalid ID {0}, cannot process".format(id))
 
+
 class Spouse(Adult):
     """
     Missionary's spouse information
     """
     def __init__(self, first_name, surname):
         super(Spouse, self).__init__(first_name, surname)
+
 
 class Child(Person):
     """Uses the information available on the missionary's children."""

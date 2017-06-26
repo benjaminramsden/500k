@@ -30,7 +30,7 @@ import logging
 
 
 def main(argv=None):
-    logging.basicConfig(filename='diags.log', level=logging.INFO)
+    logging.basicConfig(filename='diags.log', level=logging.WARNING)
     # Gather all information from the spreadsheet. Returned as list of lists
     # where each list is a row of cells.
     report_data = get_all_missionary_reports(test=False)
@@ -259,7 +259,7 @@ def create_powerpoint_pdf(q):
                     "Build PDF failed for missionary with ID: {0}".format(
                         miss_id))
         except:
-            logging.error("Thread {0} has died!".format(
+            logging.error("{0} has died!".format(
                           threading.current_thread().name))
         finally:
             q.task_done()
@@ -350,14 +350,18 @@ def insert_bio(slide, missionary, report):
             try:
                 prayer_nos += int(village.attendance)
             except ValueError:
-                logging.error("ERROR: Invalid value for attendance {0}".format(
-                    village.attendance))
+                logging.error("ERROR: Invalid value for attendance {0},"
+                              "Missionary ID: {1}".format(
+                                  village.attendance,
+                                  missionary.id))
         if village.baptisms:
             try:
                 baptisms += int(village.baptisms)
             except ValueError:
-                logging.error("ERROR: Invalid value for baptisms {0}".format(
-                    village.baptisms))
+                logging.error("ERROR: Invalid value for baptisms {0},"
+                              "Missionary ID: {1}".format(
+                                  village.baptisms,
+                                  missionary.id))
 
     bio_line("\n Churches: ", str(churches), p)
     bio_line("\n Coming for Prayer: ", str(prayer_nos), p)

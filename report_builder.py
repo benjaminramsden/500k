@@ -13,7 +13,7 @@ from village import Village
 from missionary import Missionary, Child, Spouse
 from operator import itemgetter
 from Queue import Queue
-from threading import Thread
+import threading
 import pythoncom
 import logging
 
@@ -51,7 +51,7 @@ def main(argv=None):
     num_threads = 10
 
     for i in range(num_threads):
-        worker = Thread(target=create_powerpoint_pdf, args=(q,))
+        worker = threading.Thread(target=create_powerpoint_pdf, args=(q,))
         worker.setDaemon(True)
         worker.start()
 

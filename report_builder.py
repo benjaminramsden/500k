@@ -235,7 +235,7 @@ def create_powerpoint(missionary):
             counter += 1
 
     # TODO - Save the powerpoint in a folder with Missionary ID
-    path = "C:\Users\\br1\Code\\500k\\{0}_{1}.pptx".format(
+    path = "C:\Users\\br1\Code\\500k\\reports\\{0}_{1}.pptx".format(
         missionary.id,
         missionary.surname)
     prs.save(path)

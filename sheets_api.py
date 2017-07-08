@@ -118,7 +118,7 @@ def update_sheet(data, imgur=False):
         valueInputOption="RAW", body=body).execute()
 
 
-def get_all_factfile_data():
+def get_all_factfile_data(test=False):
     # Log into Google and extract all column data.
     credentials = get_credentials()
     http = credentials.authorize(httplib2.Http())
@@ -128,7 +128,10 @@ def get_all_factfile_data():
                               discoveryServiceUrl=discoveryUrl)
 
     spreadsheetId = '1gzN08u0gvBLn2Qg5_sevP6sdxWGkoc_XmpvuFxoHLyo'
-    rangeName = 'Metadata!A3:EO1000'
+    if test:
+        rangeName = 'Metadata!A3:EO10'
+    else:
+        rangeName = 'Metadata!A3:EO1000'
     result = service.spreadsheets().values().get(
         spreadsheetId=spreadsheetId, range=rangeName).execute()
     values = result.get('values', [])

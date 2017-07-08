@@ -36,15 +36,18 @@ def main(argv=None):
                         format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
                         datefmt='%m-%d %H:%M')
 
+    # TEST?
+    test = True
+
     # Make sure all Imgur IDs are up-to-date.
     imgur_imgs = update_imgur_ids()
 
     # Gather all information from the spreadsheet. Returned as list of lists
     # where each list is a row of cells.
-    report_data = get_all_missionary_reports(test=True)
+    report_data = get_all_missionary_reports(test)
 
     # Add in the factfile information
-    factfile_data = get_all_factfile_data()
+    factfile_data = get_all_factfile_data(test)
 
     # Now build out the data into usable dictionaries
     all_missionaries = construct_data(report_data, factfile_data, imgur_imgs)
@@ -414,13 +417,7 @@ def insert_bio(slide, missionary, report):
             "C:\Users\\br1\Dropbox\NCM\Reports\Ben Report Automation" +
             "\headshot.png")
 
-    # get_bio_from_factfile(slide,report["Missionary ID"])
     return
-
-
-def get_bio_from_factfile(slide, miss_id):
-    # Pull down info for missionary based off missionary ID from factfile sheet
-    ff_data = get_all_factfile_data()
 
 
 def enter_report_title(report, slide):

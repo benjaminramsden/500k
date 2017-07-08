@@ -43,9 +43,15 @@ def PPTtoPDF(inputFileName, outputFileName, formatType=32):
     powerpoint.Visible = 1
     if outputFileName[-3:] != 'pdf':
         outputFileName = outputFileName + ".pdf"
-    deck = powerpoint.Presentations.Open(inputFileName)
-    deck.SaveAs(outputFileName, formatType)  # formatType = 32 for ppt to pdf
-    deck.Close()
+    try:
+        deck = powerpoint.Presentations.Open(inputFileName)
+    except:
+        logging.error("Failed to open powerpoint for conversion")
+        try:
+            deck.SaveAs(outputFileName, formatType)  # formatType = 32 for ppt to pdf
+        except:
+            logging.error("Failed to save powerpoint to PDF")
+        deck.Close()
     powerpoint.Quit()
 
 

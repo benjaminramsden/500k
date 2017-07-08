@@ -46,7 +46,7 @@ def get_credentials():
             credentials = tools.run_flow(flow, store, flags)
         else:  # Needed only for compatibility with Python 2.6
             credentials = tools.run(flow, store)
-        print('Storing credentials to ' + credential_path)
+        logging.info('Storing credentials to ' + credential_path)
     return credentials
 
 
@@ -68,7 +68,7 @@ def get_all_missionary_reports(test=False):
         spreadsheetId=spreadsheetId, range=rangeName).execute()
     values = result.get('values', [])
     if not values:
-        print('No data found.')
+        logging.error('No data found.')
     else:
         return values
 
@@ -133,6 +133,6 @@ def get_all_factfile_data():
         spreadsheetId=spreadsheetId, range=rangeName).execute()
     values = result.get('values', [])
     if not values:
-        print('No data found.')
+        logging.error('No data found.')
     else:
         return values

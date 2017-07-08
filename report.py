@@ -1,5 +1,6 @@
 from datetime import datetime
 from utils import validate_state
+import logging
 
 """
 Class for reports
@@ -15,7 +16,7 @@ class Report(object):
 
     def set_date(self, date, pid):
         if not date:
-            print "ERROR: No date for report ID {0}".format(pid)
+            logging.warning("No date for report ID {0}".format(pid))
             self._date = None
         elif len(date) < 8:
             self._date = date
@@ -44,9 +45,9 @@ class Report(object):
                     counter += 1
                 self.report.extend(paragraphs[counter:])
             else:
-                print "CHECK: {0},{1} has no paragraphs".format(
+                logging.warning("{0},{1} has no paragraphs".format(
                     self.id,
-                    self._date)
+                    self._date))
                 # sentences = report.split(".")
                 # temp = sentences[0]
                 # self.report = [temp]

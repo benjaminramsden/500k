@@ -16,6 +16,7 @@ from Queue import Queue
 import threading
 import pythoncom
 import logging
+from imgur import get_image
 
 # This script conducts the following:
 # - Gets the information on a missionary based on Miss ID (gets all)
@@ -30,10 +31,14 @@ import logging
 
 
 def main(argv=None):
-    logging.basicConfig(filename='diags.log', level=logging.WARNING)
+    logging.basicConfig(filename='diags.log',
+                        level=logging.WARNING,
+                        format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
+                        datefmt='%m-%d %H:%M')
+
     # Gather all information from the spreadsheet. Returned as list of lists
     # where each list is a row of cells.
-    report_data = get_all_missionary_reports(test=False)
+    report_data = get_all_missionary_reports(test=True)
 
     # Add in the factfile information
     factfile_data = get_all_factfile_data()
@@ -253,10 +258,20 @@ def create_powerpoint_pdf(q):
             pythoncom.CoInitialize()
             # Export to pdf - this is the slowest part so thread.
             if path:
-                PPTtoPDF(path, path.split(".")[0] + ".pdf")
+                try:
+                    PPTtoPDF(path, path.split(".")[0] + ".pdf")
+                    try:
+                        os.remove(path)
+                    except OSError:
+                        logging.warning("Could not find {0} to delete".format(
+                            path))
+                except:
+                    logging.error(
+                        "Build PDF failed for missionary with ID: {0}".format(
+                            miss_id))
             else:
                 logging.error(
-                    "Build PDF failed for missionary with ID: {0}".format(
+                    "Missing pptx for missionary with ID: {0}".format(
                         miss_id))
         except:
             logging.error("{0} has died!".format(
@@ -350,15 +365,19 @@ def insert_bio(slide, missionary, report):
             try:
                 prayer_nos += int(village.attendance)
             except ValueError:
-                logging.error("ERROR: Invalid value for attendance {0},"
-                              "Missionary ID: {1}".format(
-                                  village.attendance,
-                                  missionary.id))
+                logging.info("Non-numerical value for attendance")
+                try:
+                    prayer_nos += int(village.attendance.split("-")[1])
+                except ValueError:
+                    logging.error("Invalid value for attendance {0}, "
+                                  "Missionary ID: {1}".format(
+                                      village.attendance,
+                                      missionary.id))
         if village.baptisms:
             try:
                 baptisms += int(village.baptisms)
             except ValueError:
-                logging.error("ERROR: Invalid value for baptisms {0},"
+                logging.error("Invalid value for baptisms {0}, "
                               "Missionary ID: {1}".format(
                                   village.baptisms,
                                   missionary.id))
@@ -370,8 +389,11 @@ def insert_bio(slide, missionary, report):
     # Download Imgur picture, store off and add to report
     profile_pic_holder = slide.placeholders[10]
     try:
+        if not missionary.pic:
+            missionary.pic = get_image(missionary.id)
         profile_pic_holder.insert_picture(missionary.pic)
     except AttributeError:
+        logging.error("No headshot for {0}.".format(missionary.id))
         profile_pic_holder.insert_picture(
             "C:\Users\\br1\Dropbox\NCM\Reports\Ben Report Automation" +
             "\headshot.png")

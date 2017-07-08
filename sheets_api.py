@@ -129,7 +129,7 @@ def get_all_factfile_data(test=False):
 
     spreadsheetId = '1gzN08u0gvBLn2Qg5_sevP6sdxWGkoc_XmpvuFxoHLyo'
     if test:
-        rangeName = 'Metadata!A3:EO10'
+        rangeName = 'Metadata!A3:EO55'
     else:
         rangeName = 'Metadata!A3:EO1000'
     result = service.spreadsheets().values().get(

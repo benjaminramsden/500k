@@ -6,11 +6,10 @@ import shutil
 import re
 from utils import *
 from operator import itemgetter
-from Queue import Queue
-import threading
 import pythoncom
 import logging
 from imgur import get_image
+import threading
 
 def build_report_slide(prs, missionary, report, report_split):
     # Access placeholders for content slides
@@ -46,19 +45,9 @@ def build_report_slide(prs, missionary, report, report_split):
     run = p.add_run()
     run.text = "\n".join(report.prayer_rqs)
 
+    logging.info("Added report slide for {0}:{1}".format(missionary.id,
+                                                         report.round))
     return success
-
-
-def enter_report_title(report, slide):
-    title_holder = slide.placeholders[0]
-    assert title_holder.has_text_frame
-    title_holder.text_frame.clear()
-    p = title_holder.text_frame.paragraphs[0]
-    run = p.add_run()
-    if report.round:
-        run.text = str(report.round[1]) + " Report " + str(report.round[0])
-    else:
-        run.text = "Report"
 
 
 def insert_bio(slide, missionary, report):
@@ -83,7 +72,7 @@ def insert_bio(slide, missionary, report):
                                         '\!Reporting Workflow\Map Images\\' +
                                         missionary.state + '.png')
     except IOError:
-        logging.error("ERROR: Missing state map for {0}, not added".format(
+        logging.error("Missing state map for {0}, not added".format(
             missionary.state))
 
     # Insert Name
@@ -143,7 +132,17 @@ def insert_bio(slide, missionary, report):
             "C:\Users\\br1\Dropbox\NCM\Reports\Ben Report Automation" +
             "\headshot.png")
 
-    return
+
+def enter_report_title(report, slide):
+    title_holder = slide.placeholders[0]
+    assert title_holder.has_text_frame
+    title_holder.text_frame.clear()
+    p = title_holder.text_frame.paragraphs[0]
+    run = p.add_run()
+    if report.round:
+        run.text = str(report.round[1]) + " Report " + str(report.round[0])
+    else:
+        run.text = "Report"
 
 
 def create_title_slide(prs, missionary):
@@ -177,6 +176,7 @@ def create_title_slide(prs, missionary):
     run = p.add_run()
     run.text = "Reports - " + str(datetime.now().year)
 
+    logging.info("Title slide for {0} complete".format(missionary.id))
     return prs
 
 
@@ -187,6 +187,7 @@ def create_powerpoint(missionary):
 
     # Title slide - requires name and ID only.
     create_title_slide(prs, missionary)
+
 
     counter = 1
     for report_no, report in sorted(sorted(missionary.reports.iteritems(),

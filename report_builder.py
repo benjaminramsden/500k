@@ -8,6 +8,8 @@ from missionary import Missionary, Child, Spouse
 import logging
 from imgur import update_imgur_ids, get_image
 from powerpoint import *
+from Queue import Queue
+import threading
 
 # This script conducts the following:
 # - Gets the information on a missionary based on Miss ID (gets all)
@@ -146,16 +148,14 @@ def construct_report_data(all_missionaries, report_data):
                     try:
                         missionary = Missionary(missionary_id,
                                                 names[-1],
-                                                names[-2],
-                                                row[columns['Photo links']])
+                                                names[-2])
                     except NotImplementedError:
                         continue
                 else:
                     try:
                         missionary = Missionary(missionary_id,
                                                 names[-1],
-                                                None,
-                                                row[columns['Photo links']])
+                                                None)
                     except NotImplementedError:
                         continue
                 all_missionaries[missionary_id] = missionary
@@ -229,7 +229,7 @@ def add_imgur_profiles(all_missionaries, imgur_imgs):
         try:
             missionary.pic = imgur_imgs[miss_id]
         except KeyError:
-            logging.info('{0} has no Imgur picture'.format(missionary))
+            logging.info('{0} has no Imgur picture'.format(miss_id))
 
 
 if __name__ == '__main__':

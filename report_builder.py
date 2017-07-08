@@ -16,7 +16,7 @@ from Queue import Queue
 import threading
 import pythoncom
 import logging
-from imgur import get_image
+from imgur import update_imgur_ids, get_image
 
 # This script conducts the following:
 # - Gets the information on a missionary based on Miss ID (gets all)
@@ -32,9 +32,12 @@ from imgur import get_image
 
 def main(argv=None):
     logging.basicConfig(filename='diags.log',
-                        level=logging.WARNING,
+                        level=logging.INFO,
                         format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
                         datefmt='%m-%d %H:%M')
+
+    # Make sure all Imgur IDs are up-to-date.
+    imgur_imgs = update_imgur_ids()
 
     # Gather all information from the spreadsheet. Returned as list of lists
     # where each list is a row of cells.
@@ -44,7 +47,7 @@ def main(argv=None):
     factfile_data = get_all_factfile_data()
 
     # Now build out the data into usable dictionaries
-    all_missionaries = construct_data(report_data, factfile_data)
+    all_missionaries = construct_data(report_data, factfile_data, imgur_imgs)
 
     # Time to create the presentations, loop around for every single missionary
     # TODO - In future make sure only missionaries with new reports get
@@ -71,7 +74,7 @@ def main(argv=None):
     return 0
 
 
-def construct_data(report_data, factfile_data):
+def construct_data(report_data, factfile_data, imgur_imgs):
     """
     Take from the two different spreadsheets to create a total view of all the
     missionary data, once complete we have all the info required to start
@@ -80,6 +83,7 @@ def construct_data(report_data, factfile_data):
     all_missionaries = {}
     construct_factfile_data(all_missionaries, factfile_data)
     construct_report_data(all_missionaries, report_data)
+    add_imgur_profiles(all_missionaries, imgur_imgs)
     return all_missionaries
 
 
@@ -141,21 +145,23 @@ def construct_report_data(all_missionaries, report_data):
                 missionary = all_missionaries[missionary_id]
             else:
                 # New missionary, create new missionary and add report.
-                logging.warning("Missionary not found, does {0} exist?".format(
+                logging.warning("No factfile data for {0}".format(
                     missionary_id))
                 names = report.name.split(" ")
                 if len(names) > 1:
                     try:
                         missionary = Missionary(missionary_id,
                                                 names[-1],
-                                                names[-2])
+                                                names[-2],
+                                                row[columns['Photo links']])
                     except NotImplementedError:
                         continue
                 else:
                     try:
                         missionary = Missionary(missionary_id,
                                                 names[-1],
-                                                None)
+                                                None,
+                                                row[columns['Photo links']])
                     except NotImplementedError:
                         continue
                 all_missionaries[missionary_id] = missionary
@@ -166,7 +172,7 @@ def construct_report_data(all_missionaries, report_data):
 
 def construct_factfile_data(all_missionaries, factfile_data):
     """
-    With missionary reports constructed, now add the factfile data to the side
+    Start building the Missionary data using factfile information
     """
     logging.info("Constructing factfile data")
 
@@ -186,20 +192,22 @@ def construct_factfile_data(all_missionaries, factfile_data):
                                         row[columns[u'MissionarySecondName']],
                                         row[columns[u'MissionaryFirstName']])
             except NotImplementedError:
-                continue
+                logging.error("Couldn't create {0} factfile data".format(
+                    row[columns[u'ID (new)']]))
             try:
                 missionary.state = validate_state(
                     row[columns[u'MissionField State']])
             except ValueError:
-                continue
+                logging.error("Invalid state for {0}: {1}".format(
+                    row[columns[u'ID (new)']],
+                    row[columns[u'MissionField State']]))
             missionary.pic = row[columns[u'Profile Picture']]
             # Add family and biography
             if len(row) > columns[u'Number of Dependents']:
                 if row[columns[u'Wife / Husband\'s First Name']]:
                     missionary.spouse = Spouse(
                         row[columns[u'Wife / Husband\'s First Name']],
-                        row[columns[u'Wife / Husband\'s Second Name']],
-                    )
+                        row[columns[u'Wife / Husband\'s Second Name']])
             for i in range(1, 6):
                 if row[columns[u'Child ' + str(i) + ' First Name']]:
                     missionary.children[u'Child ' + str(i)] = Child(
@@ -217,8 +225,17 @@ def construct_factfile_data(all_missionaries, factfile_data):
                                 row[columns[u'V' + str(i) + ' N']],
                                 row[columns[u'V' + str(i) + ' B']]))
             missionary.villages = villages
+            all_missionaries[missionary.id] = missionary
 
     logging.info("Factfile data has been constructed")
+
+
+def add_imgur_profiles(all_missionaries, imgur_imgs):
+    for miss_id, missionary in all_missionaries.iteritems():
+        try:
+            missionary.pic = imgur_imgs[miss_id]
+        except KeyError:
+            logging.info('{0} has no Imgur picture'.format(missionary))
 
 
 def create_powerpoint(missionary):
@@ -253,6 +270,7 @@ def create_powerpoint_pdf(q):
     while True:
         try:
             (missionary, miss_id) = q.get()
+            logging.info("Building pptx file for {0}".format(miss_id))
             path = create_powerpoint(missionary)
 
             pythoncom.CoInitialize()
@@ -389,9 +407,7 @@ def insert_bio(slide, missionary, report):
     # Download Imgur picture, store off and add to report
     profile_pic_holder = slide.placeholders[10]
     try:
-        if not missionary.pic:
-            missionary.pic = get_image(missionary.id)
-        profile_pic_holder.insert_picture(missionary.pic)
+        profile_pic_holder.insert_picture(get_image(missionary.pic))
     except AttributeError:
         logging.error("No headshot for {0}.".format(missionary.id))
         profile_pic_holder.insert_picture(

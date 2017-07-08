@@ -87,29 +87,13 @@ def update_imgur_ids():
     # report so we know where to grab it from.
     client = start_client()
 
-    # Get image data, match title of file to Missionary ID and then add this
-    # data to the end of the list.
-    (miss_ids, imgur_ids) = get_all_missionary_reports(imgur=True)
+    # Get image data
     images = client.get_account_images('me')
 
-    # By default Google does not keep empty list entries at the end of a
-    # row/column, correct this now
-    imgur_ids.extend([[]]*(len(miss_ids)-len(imgur_ids)))
-
-    # WARNING - This loop is slow, should try to speed it up
-    for idx,imgur_id in enumerate(imgur_ids):
-        if not imgur_id:
-            # This needs updating, find the Imgur picture based on it's title
-            # which should match the Missionary ID of the same index
-            for image in images:
-                if image.title==miss_ids[idx]:
-                    # Matched, update the Imgur ID list
-                    print("Updating photo for Missionary ID {0}, the image ID"
-                          "is {1}".format(image.title,image.id))
-                    imgur_id = image.id
-
-    # Upload the new data to the spreadsheet
-    update_sheet(imgur_ids,imgur=True)
+    imgur_imgs = {}
+    for image in images:
+        imgur_imgs[image.title] = image.id
+    return imgur_imgs
 
 def post_images(client):
     # Get the dropbox parent directory containing the factfiles
@@ -146,9 +130,9 @@ def post_images(client):
                 print "File {0} uploaded".format(fname)
     return 0        # success
 
-def get_image(img_id):
+def get_image(id):
     client = start_client()
-    return client.get_image(img_id)
+    return client.get_image(id)
 
 if __name__ == '__main__':
     status = main()

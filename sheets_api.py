@@ -128,7 +128,7 @@ def get_all_factfile_data():
                               discoveryServiceUrl=discoveryUrl)
 
     spreadsheetId = '1gzN08u0gvBLn2Qg5_sevP6sdxWGkoc_XmpvuFxoHLyo'
-    rangeName = 'Metadata!A3:EA1000'
+    rangeName = 'Metadata!A3:EO1000'
     result = service.spreadsheets().values().get(
         spreadsheetId=spreadsheetId, range=rangeName).execute()
     values = result.get('values', [])

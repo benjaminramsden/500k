@@ -3,6 +3,7 @@ Class describing a missionary
 """
 from datetime import datetime
 from utils import validate_state
+import logging
 
 
 class Person(object):
@@ -25,10 +26,11 @@ class Missionary(Adult):
     Missionary class contains personal details and historical factfile and
     report information. Should allow initialisation just based on Missionary ID
     """
-    def __init__(self, id, surname, first_name=None):
+    def __init__(self, id, surname, first_name=None, pic=None):
         super(Missionary, self).__init__(surname, first_name)
         self.reports = {}
         self.children = {}
+        self.pic = pic
         if not id or len(id) is not 6:
             raise NotImplementedError(
                 "Invalid ID {0}, cannot process".format(id))
@@ -57,6 +59,6 @@ class Child(Person):
             self._dob = datetime.strptime(dob, '%Y')
             self.age = datetime.now().year - self._dob.year
         except ValueError:
-            print "Invalid year of birth: {0}. Age will not be added".format(
-                dob)
+            logging.error("Invalid year of birth: {0}. Age will not be added".format(
+                dob))
             self.age = None

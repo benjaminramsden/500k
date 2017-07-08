@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from datetime import datetime
 from utils import validate_state
 import logging
@@ -29,17 +30,18 @@ class Report(object):
             self.historical = False
 
     def add_reports(self, report):
-        if len(report) < 3000:
+        if len(report) < 2600:
             self.report = [report]
         else:
-            paragraphs = report.split("\n")
+            logging.info("Splitting into several slides {0}".format(self.id))
+            paragraphs = report.splitlines()
             if len(paragraphs) > 1:
                 temp = paragraphs[0]
                 self.report = [temp]
                 counter = 1
                 for para in paragraphs[1:]:
                     temp = temp + "\n" + para
-                    if len(temp) > 3000:
+                    if len(temp) > 2600:
                         break
                     self.report = [temp]
                     counter += 1

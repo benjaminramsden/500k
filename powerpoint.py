@@ -10,6 +10,7 @@ import pythoncom
 import logging
 from imgur import get_image
 import threading
+import urllib
 
 def build_report_slide(prs, missionary, report, report_split):
     # Access placeholders for content slides
@@ -122,15 +123,19 @@ def insert_bio(slide, missionary, report):
     bio_line("\n Coming for Prayer: ", str(prayer_nos), p)
     bio_line("\n Baptisms: ", str(baptisms), p)
 
-    # Download Imgur picture, store off and add to report
+    # Download picture to offline, store off and add to report
     profile_pic_holder = slide.placeholders[10]
     try:
-        profile_pic_holder.insert_picture(get_image(missionary.pic))
+        img_filename = missionary.pic.split('/')[-1].rstrip("\'")
+        urllib.urlretrieve(missionary.pic, img_filename)
+        profile_pic_holder.insert_picture(img_filename)
     except AttributeError:
         logging.error("No headshot for {0}.".format(missionary.id))
         profile_pic_holder.insert_picture(
             "C:\Users\\br1\Dropbox\NCM\Reports\Ben Report Automation" +
             "\headshot.png")
+
+    logging.info("Bio inserted for {0}".format(missionary.id))
 
 
 def enter_report_title(report, slide):
@@ -188,7 +193,6 @@ def create_powerpoint(missionary):
     # Title slide - requires name and ID only.
     create_title_slide(prs, missionary)
 
-
     counter = 1
     for report_no, report in sorted(sorted(missionary.reports.iteritems(),
                                            key=itemgetter(0),
@@ -199,7 +203,7 @@ def create_powerpoint(missionary):
             build_report_slide(prs, missionary, report, report_split)
             counter += 1
 
-    # TODO - Save the powerpoint in a folder with Missionary ID
+    # Save the powerpoint in a folder with Missionary ID
     path = "C:\Users\\br1\Code\\500k\\reports\\{0}_{1}.pptx".format(
         missionary.id,
         missionary.surname)

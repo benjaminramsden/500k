@@ -64,9 +64,6 @@ def main(argv=None):
 
     q.join()
 
-    # TODO - Now upload all these reports to Google Drive via API, saving the
-    # URL/ID of the report back into Google Sheets
-
     return 0
 
 
@@ -79,7 +76,7 @@ def construct_data(report_data, factfile_data, imgur_imgs):
     all_missionaries = {}
     construct_factfile_data(all_missionaries, factfile_data)
     construct_report_data(all_missionaries, report_data)
-    add_imgur_profiles(all_missionaries, imgur_imgs)
+    # add_imgur_profiles(all_missionaries, imgur_imgs)
     return all_missionaries
 
 
@@ -195,7 +192,7 @@ def construct_factfile_data(all_missionaries, factfile_data):
                 logging.error("Invalid state for {0}: {1}".format(
                     row[columns[u'ID (new)']],
                     row[columns[u'MissionField State']]))
-            missionary.pic = row[columns[u'Profile Picture']]
+            missionary.pic = row[columns[u'Headshot Photo link']]
             # Add family and biography
             if len(row) > columns[u'Number of Dependents']:
                 if row[columns[u'Wife / Husband\'s First Name']]:

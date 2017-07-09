@@ -28,7 +28,7 @@ def build_report_slide(prs, missionary, report, report_split):
     report_holder.text_frame.clear()
     p = report_holder.text_frame.paragraphs[0]
     run = p.add_run()
-    run.text = report_split.rstrip()
+    run.text = report_split.rstrip().rstrip(u"\u2202")
 
     # Prayer heading
     prayer_h_holder = content_slide.placeholders[15]
@@ -44,6 +44,7 @@ def build_report_slide(prs, missionary, report, report_split):
     prayer_b_holder.text_frame.clear()
     p = prayer_b_holder.text_frame.paragraphs[0]
     run = p.add_run()
+    [prayer.capitalize() for prayer in report.prayer_rqs]
     run.text = "\n".join(report.prayer_rqs)
 
     logging.info("Added report slide for {0}:{1}".format(missionary.id,
@@ -129,6 +130,7 @@ def insert_bio(slide, missionary, report):
         img_filename = missionary.pic.split('/')[-1].rstrip("\'")
         urllib.urlretrieve(missionary.pic, img_filename)
         profile_pic_holder.insert_picture(img_filename)
+        os.remove(img_filename)
     except AttributeError:
         logging.error("No headshot for {0}.".format(missionary.id))
         profile_pic_holder.insert_picture(
@@ -206,7 +208,7 @@ def create_powerpoint(missionary):
     # Save the powerpoint in a folder with Missionary ID
     path = "C:\Users\\br1\Code\\500k\\reports\\{0}_{1}.pptx".format(
         missionary.id,
-        missionary.surname)
+        missionary.first_name)
     prs.save(path)
     logging.info("Reports for {0} have been saved to {1}.".format(
                     missionary.id, path))
@@ -222,12 +224,16 @@ def create_powerpoint_pdf(q):
                 year = int(date.split('/')[1])
                 for k,v in missionary.reports.iteritems():
                     if v.get_month() == month and v.get_year() == year:
+                        logging.info("Found report in {0} for {1}".format(
+                            month,
+                            miss_id))
                         create = True
                         break
             else:
+                logging.info("No date provided, make for {0}".format(miss_id))
                 create = True
 
-            if create:
+            if create and missionary.reports:
                 logging.info("Building pptx file for {0}".format(miss_id))
                 path = create_powerpoint(missionary)
 

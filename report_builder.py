@@ -10,6 +10,7 @@ from imgur import update_imgur_ids, get_image
 from powerpoint import *
 from Queue import Queue
 import threading
+import argparse
 
 # This script conducts the following:
 # - Gets the information on a missionary based on Miss ID (gets all)
@@ -28,19 +29,35 @@ def main(argv=None):
                         level=logging.INFO,
                         format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
                         datefmt='%m-%d %H:%M')
+    parser = argparse.ArgumentParser(description='Report builder for 500k')
+    parser.add_argument('-d',
+                        '--date',
+                        help='Month and year to generate reports for in MM/YYYY integer form e.g. 01/2017',
+                        required=False)
+    parser.add_argument('--test', help='Use sample data only', action='store_true')
+    args = parser.parse_args()
 
-    # TEST?
-    test = True
-
+    # Validate date input
+    if args.date:
+        try:
+            if len(args.date) != 7:
+                raise TypeError
+            int(args.date[:2])
+            int(args.date[3:])
+        except TypeError:
+            raise ValueError("Date must be in MM/YYYY format")
+            
     # Make sure all Imgur IDs are up-to-date.
     imgur_imgs = update_imgur_ids()
 
     # Gather all information from the spreadsheet. Returned as list of lists
     # where each list is a row of cells.
-    report_data = get_all_missionary_reports(test)
-
-    # Add in the factfile information
-    factfile_data = get_all_factfile_data(test)
+    if args.test:
+        report_data = get_all_missionary_reports(test=True)
+        factfile_data = get_all_factfile_data(test=True)
+    else:
+        report_data = get_all_missionary_reports()
+        factfile_data = get_all_factfile_data()
 
     # Now build out the data into usable dictionaries
     all_missionaries = construct_data(report_data, factfile_data, imgur_imgs)
@@ -59,8 +76,13 @@ def main(argv=None):
         worker.setDaemon(True)
         worker.start()
 
+    if args.date:
+        date = args.date
+    else:
+        date = None
+
     for miss_id, missionary in all_missionaries.iteritems():
-        q.put((missionary, miss_id))
+        q.put((missionary, miss_id, date))
 
     q.join()
 

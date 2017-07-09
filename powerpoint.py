@@ -216,28 +216,39 @@ def create_powerpoint(missionary):
 def create_powerpoint_pdf(q):
     while True:
         try:
-            (missionary, miss_id) = q.get()
-            logging.info("Building pptx file for {0}".format(miss_id))
-            path = create_powerpoint(missionary)
-
-            pythoncom.CoInitialize()
-            # Export to pdf - this is the slowest part so thread.
-            if path:
-                try:
-                    PPTtoPDF(path, path.split(".")[0] + ".pdf")
-                    try:
-                        os.remove(path)
-                    except OSError:
-                        logging.warning("Could not find {0} to delete".format(
-                            path))
-                except:
-                    logging.error(
-                        "Build PDF failed for missionary with ID: {0}".format(
-                            miss_id))
+            (missionary, miss_id, date) = q.get()
+            if date:
+                month = int(date.split('/')[0])
+                year = int(date.split('/')[1])
+                for k,v in missionary.reports.iteritems():
+                    if v.get_month() == month and v.get_year() == year:
+                        create = True
+                        break
             else:
-                logging.error(
-                    "Missing pptx for missionary with ID: {0}".format(
-                        miss_id))
+                create = True
+
+            if create:
+                logging.info("Building pptx file for {0}".format(miss_id))
+                path = create_powerpoint(missionary)
+
+                pythoncom.CoInitialize()
+                # Export to pdf - this is the slowest part so thread.
+                if path:
+                    try:
+                        PPTtoPDF(path, path.split(".")[0] + ".pdf")
+                        try:
+                            os.remove(path)
+                        except OSError:
+                            logging.warning("Could not find {0} to delete".format(
+                                path))
+                    except:
+                        logging.error(
+                            "Build PDF failed for missionary with ID: {0}".format(
+                                miss_id))
+                else:
+                    logging.error(
+                        "Missing pptx for missionary with ID: {0}".format(
+                            miss_id))
         except:
             logging.error("{0} has died!".format(
                           threading.current_thread().name))

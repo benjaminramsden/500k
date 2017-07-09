@@ -29,8 +29,19 @@ class Report(object):
                                           '%a %d %b %Y at %H:%M')
             self.historical = False
 
+
+    def get_month(self):
+        if not self.historical:
+            return self._date.month
+
+
+    def get_year(self):
+        if not self.historical:
+            return self._date.year
+
+
     def add_reports(self, report):
-        if len(report) < 2600:
+        if len(report) < 2200:
             self.report = [report]
         else:
             logging.info("Splitting into several slides {0}".format(self.id))
@@ -41,7 +52,7 @@ class Report(object):
                 counter = 1
                 for para in paragraphs[1:]:
                     temp = temp + "\n" + para
-                    if len(temp) > 2600:
+                    if len(temp) > 2200:
                         break
                     self.report = [temp]
                     counter += 1
@@ -50,21 +61,7 @@ class Report(object):
                 logging.warning("{0},{1} has no paragraphs".format(
                     self.id,
                     self._date))
-                # sentences = report.split(".")
-                # temp = sentences[0]
-                # self.report = [temp]
-                # counter = 1
-                # for sentence in sentences[1:]:
-                #     if counter % 5:
-                #         temp = temp + ".\n" + sentence
-                #     else:
-                #         temp = temp + "." + sentence
-                #
-                #     if len(temp) > 3000:
-                #         break
-                #     self.report = [temp]
-                #     counter +=1
-                # self.report.extend(sentences[counter:])
+
 
     def validate_id(self, pid):
         if len(pid) != 6:

@@ -17,7 +17,7 @@ def build_report_slide(prs, missionary, report, report_split):
     content_slide = prs.slides.add_slide(prs.slide_layouts[0])
 
     # Add biography, mainly from factfile
-    success = insert_bio(content_slide, missionary, report)
+    insert_bio(content_slide, missionary, report)
 
     # Report title - pull report round out of date
     enter_report_title(report, content_slide)

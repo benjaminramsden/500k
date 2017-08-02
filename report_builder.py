@@ -27,7 +27,7 @@ import argparse
 def main(argv=None):
     logging.basicConfig(filename='diags.log',
                         level=logging.INFO,
-                        format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
+                        format='%(asctime)s %(name)-12s %(levelname)-8s %(threadName)s %(message)s',
                         datefmt='%m-%d %H:%M')
     parser = argparse.ArgumentParser(description='Report builder for 500k')
     parser.add_argument('-d',
@@ -46,7 +46,7 @@ def main(argv=None):
             int(args.date[3:])
         except TypeError:
             raise ValueError("Date must be in MM/YYYY format")
-            
+
     # Make sure all Imgur IDs are up-to-date.
     imgur_imgs = update_imgur_ids()
 

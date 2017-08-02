@@ -19,6 +19,7 @@ class Report(object):
         if not date:
             logging.warning("No date for report ID {0}".format(pid))
             self._date = None
+            self.historical = True
         elif len(date) < 8:
             self._date = date
             self.historical = True

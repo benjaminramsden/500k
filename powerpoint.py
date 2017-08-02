@@ -53,6 +53,7 @@ def build_report_slide(prs, missionary, report, report_split):
 
 
 def insert_bio(slide, missionary, report):
+    logging.info("Inserting bio for {0}".format(missionary.id))
     # Insert state
     state_holder = slide.placeholders[2]
     assert state_holder.has_text_frame
@@ -125,17 +126,23 @@ def insert_bio(slide, missionary, report):
     bio_line("\n Baptisms: ", str(baptisms), p)
 
     # Download picture to offline, store off and add to report
+    logging.info("Adding profile pic for {0}".format(missionary.id))
     profile_pic_holder = slide.placeholders[10]
     try:
         img_filename = missionary.pic.split('/')[-1].rstrip("\'")
-        urllib.urlretrieve(missionary.pic, img_filename)
-        profile_pic_holder.insert_picture(img_filename)
-        os.remove(img_filename)
-    except AttributeError:
-        logging.error("No headshot for {0}.".format(missionary.id))
+        if img_filename:
+            urllib.urlretrieve(missionary.pic, img_filename)
+            profile_pic_holder.insert_picture(img_filename)
+            os.remove(img_filename)
+        else:
+            raise AttributeError
+    except (AttributeError, IOError) as e:
+        logging.warning("No headshot for {0}.".format(missionary.id))
         profile_pic_holder.insert_picture(
             "C:\Users\\br1\Dropbox\NCM\Reports\Ben Report Automation" +
             "\headshot.png")
+    except Exception as e:
+        logging.exception("Profile pic error for {0}".format(missionary.id))
 
     logging.info("Bio inserted for {0}".format(missionary.id))
 
@@ -201,9 +208,15 @@ def create_powerpoint(missionary):
                                            reverse=True),
                                     key=itemgetter(1),
                                     reverse=True):
-        for report_split in report.report:
-            build_report_slide(prs, missionary, report, report_split)
-            counter += 1
+        logging.info("Creating report slide for {0} {1}".format(
+            missionary.id, report.round))
+        try:
+            for report_split in report.report:
+                build_report_slide(prs, missionary, report, report_split)
+                counter += 1
+        except AttributeError:
+            logging.error("No report for {0}, reports: {1}".format(
+                missionary.id, missionary.reports))
 
     # Save the powerpoint in a folder with Missionary ID
     path = "C:\Users\\br1\Code\\500k\\reports\\{0}_{1}.pptx".format(
@@ -218,13 +231,15 @@ def create_powerpoint(missionary):
 def create_powerpoint_pdf(q):
     while True:
         try:
+            logging.info("Thread engaged.")
             (missionary, miss_id, date) = q.get()
+            create = False
             if date:
                 month = int(date.split('/')[0])
                 year = int(date.split('/')[1])
                 for k,v in missionary.reports.iteritems():
                     if v.get_month() == month and v.get_year() == year:
-                        logging.info("Found report in {0} for {1}".format(
+                        logging.info("Found report in month {0} for {1}".format(
                             month,
                             miss_id))
                         create = True
@@ -240,23 +255,26 @@ def create_powerpoint_pdf(q):
                 pythoncom.CoInitialize()
                 # Export to pdf - this is the slowest part so thread.
                 if path:
+                    pdf_path = path.split(".")[0] + ".pdf"
                     try:
-                        PPTtoPDF(path, path.split(".")[0] + ".pdf")
+                        PPTtoPDF(path, pdf_path)
+                        logging.info("Converted to PDF: {0}".format(pdf_path))
                         try:
                             os.remove(path)
                         except OSError:
                             logging.warning("Could not find {0} to delete".format(
                                 path))
-                    except:
-                        logging.error(
+                    except Exception as e:
+                        logging.exception(
                             "Build PDF failed for missionary with ID: {0}".format(
                                 miss_id))
                 else:
                     logging.error(
                         "Missing pptx for missionary with ID: {0}".format(
                             miss_id))
-        except:
-            logging.error("{0} has died!".format(
+        except Exception as e:
+            logging.exception("{0} has died!".format(
                           threading.current_thread().name))
         finally:
+            logging.info("Releasing thread for next job.")
             q.task_done()

@@ -4,6 +4,7 @@ import zipfile
 from shutil import copyfile
 from pptx.dml.color import RGBColor
 import comtypes.client
+import logging
 
 
 def copy_unzip_docx(f_path):
@@ -47,11 +48,11 @@ def PPTtoPDF(inputFileName, outputFileName, formatType=32):
         deck = powerpoint.Presentations.Open(inputFileName)
         try:
             deck.SaveAs(outputFileName, formatType)  # formatType = 32 for ppt to pdf
-        except:
-            logging.error("Failed to save powerpoint to PDF")
+        except Exception as e:
+            logging.exception("Failed to save powerpoint to PDF")
         deck.Close()
-    except:
-        logging.error("Failed to open powerpoint for conversion")
+    except Exception as e:
+        logging.exception("Failed to open powerpoint for conversion")
     powerpoint.Quit()
 
 

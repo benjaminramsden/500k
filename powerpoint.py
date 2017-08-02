@@ -24,7 +24,6 @@ def build_report_slide(prs, missionary, report, report_split):
 
     # Actual report!
     report_holder = content_slide.placeholders[14]
-    assert report_holder.has_text_frame
     report_holder.text_frame.clear()
     p = report_holder.text_frame.paragraphs[0]
     run = p.add_run()
@@ -32,7 +31,6 @@ def build_report_slide(prs, missionary, report, report_split):
 
     # Prayer heading
     prayer_h_holder = content_slide.placeholders[15]
-    assert prayer_h_holder.has_text_frame
     prayer_h_holder.text_frame.clear()
     p = prayer_h_holder.text_frame.paragraphs[0]
     run = p.add_run()
@@ -40,7 +38,6 @@ def build_report_slide(prs, missionary, report, report_split):
 
     # TODO - Combine prayers in dictionary together into Prayer points body
     prayer_b_holder = content_slide.placeholders[16]
-    assert prayer_b_holder.has_text_frame
     prayer_b_holder.text_frame.clear()
     p = prayer_b_holder.text_frame.paragraphs[0]
     run = p.add_run()
@@ -56,7 +53,6 @@ def insert_bio(slide, missionary, report):
     logging.info("Inserting bio for {0}".format(missionary.id))
     # Insert state
     state_holder = slide.placeholders[2]
-    assert state_holder.has_text_frame
     state_holder.text_frame.clear()
     p = state_holder.text_frame.paragraphs[0]
     run = p.add_run()
@@ -80,7 +76,6 @@ def insert_bio(slide, missionary, report):
 
     # Insert Name
     name_holder = slide.placeholders[13]
-    assert name_holder.has_text_frame
     name_holder.text_frame.clear()
     p = name_holder.text_frame.paragraphs[0]
     run = p.add_run()
@@ -90,7 +85,6 @@ def insert_bio(slide, missionary, report):
         run.text = missionary.surname
 
     bio_holder = slide.placeholders[11]
-    assert bio_holder.has_text_frame
     bio_holder.text_frame.clear()
     p = bio_holder.text_frame.paragraphs[0]
     # Apply numbers for churches and baptisms
@@ -149,7 +143,6 @@ def insert_bio(slide, missionary, report):
 
 def enter_report_title(report, slide):
     title_holder = slide.placeholders[0]
-    assert title_holder.has_text_frame
     title_holder.text_frame.clear()
     p = title_holder.text_frame.paragraphs[0]
     run = p.add_run()
@@ -165,7 +158,6 @@ def create_title_slide(prs, missionary):
 
     # Insert Missionary Name
     name_holder = title_slide.placeholders[0]
-    assert name_holder.has_text_frame
     name_holder.text_frame.clear()
     p = name_holder.text_frame.paragraphs[0]
     run = p.add_run()
@@ -176,7 +168,6 @@ def create_title_slide(prs, missionary):
 
     # Insert Missionary ID
     miss_id_holder = title_slide.placeholders[11]
-    assert miss_id_holder.has_text_frame
     miss_id_holder.text_frame.clear()
     p = miss_id_holder.text_frame.paragraphs[0]
     run = p.add_run()
@@ -184,7 +175,6 @@ def create_title_slide(prs, missionary):
 
     # Insert current year
     miss_id_holder = title_slide.placeholders[1]
-    assert miss_id_holder.has_text_frame
     miss_id_holder.text_frame.clear()
     p = miss_id_holder.text_frame.paragraphs[0]
     run = p.add_run()

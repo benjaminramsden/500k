@@ -1,12 +1,10 @@
 # -*- coding: utf-8 -*-
 import sys
-from utils import *
 from sheets_api import *
 from report import Report
 from village import Village
 from missionary import Missionary, Child, Spouse
-import logging
-from imgur import update_imgur_ids, get_image
+from imgur import update_imgur_ids
 from powerpoint import *
 from Queue import Queue
 import threading
@@ -24,7 +22,7 @@ import argparse
 # https://support.yet-another-mail-merge.com/hc/en-us/articles/210735349
 
 
-def main(argv=None):
+def main():
     logging.basicConfig(filename='diags.log',
                         level=logging.INFO,
                         format='%(asctime)s %(name)-12s %(levelname)-8s %(threadName)s %(message)s',
@@ -229,7 +227,6 @@ def construct_factfile_data(all_missionaries, factfile_data):
 
             # Mission field data
             villages = []
-            prayer_rqs = []
             for i in range(1, 6):
                 if (len(row) > columns[u'V' + str(i) + ' B'] and
                         row[columns[u'V' + str(i)]]):

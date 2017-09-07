@@ -1,16 +1,13 @@
 # -*- coding: utf-8 -*-
 from pptx import Presentation
 from datetime import datetime
-import os
-import shutil
-import re
 from utils import *
 from operator import itemgetter
 import pythoncom
 import logging
-from imgur import get_image
 import threading
 import urllib
+
 
 def build_report_slide(prs, missionary, report, report_split):
     # Access placeholders for content slides
@@ -67,8 +64,7 @@ def insert_bio(slide, missionary, report):
     # Insert India Map based off state name
     india_pic_holder = slide.placeholders[12]
     try:
-        india_pic_holder.insert_picture('C:\Users\\br1\Dropbox\NCM\Reports' +
-                                        '\!Reporting Workflow\Map Images\\' +
+        india_pic_holder.insert_picture('C:\Users\\br1\Dropbox\NCM\Reports\Ben Report Automation\Map images\\' +
                                         missionary.state + '.png')
     except IOError:
         logging.error("Missing state map for {0}, not added".format(
@@ -254,7 +250,7 @@ def create_powerpoint_pdf(q):
                         except OSError:
                             logging.warning("Could not find {0} to delete".format(
                                 path))
-                    except Exception as e:
+                    except Exception:
                         logging.exception(
                             "Build PDF failed for missionary with ID: {0}".format(
                                 miss_id))
@@ -262,7 +258,7 @@ def create_powerpoint_pdf(q):
                     logging.error(
                         "Missing pptx for missionary with ID: {0}".format(
                             miss_id))
-        except Exception as e:
+        except Exception:
             logging.exception("{0} has died!".format(
                           threading.current_thread().name))
         finally:

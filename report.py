@@ -3,11 +3,11 @@ from datetime import datetime
 from utils import validate_state
 import logging
 
-"""
-Class for reports
-"""
+
 class Report(object):
-    """docstring for Report."""
+    """
+    Class for reports
+    """
     def __init__(self, date, name, pid, report):
         super(Report, self).__init__()
         self.set_date(date, pid)
@@ -27,44 +27,31 @@ class Report(object):
             date_list = date.split(" ")
             date_list[1] = date_list[1].zfill(2)
             self._date = datetime.strptime(" ".join(date_list),
-                                          '%a %d %b %Y at %H:%M')
+                                           '%a %d %b %Y at %H:%M')
             self.historical = False
-
 
     def get_month(self):
         if not self.historical:
             return self._date.month
 
-
     def get_year(self):
         if not self.historical:
             return self._date.year
 
-
     def add_reports(self, report):
+        self.report = []
         if len(report) < 2200:
             self.report = [report]
         else:
             logging.info("Splitting into several slides {0}".format(self.id))
             paragraphs = report.splitlines()
-            if len(paragraphs) == 1:
-                self.report = [paragraphs[0]]
-            elif len(paragraphs) > 1:
-                temp = paragraphs[0]
-                self.report = [temp]
-                counter = 1
-                for para in paragraphs[1:]:
-                    temp = temp + "\n" + para
-                    if len(temp) > 2200:
-                        break
-                    self.report = [temp]
-                    counter += 1
-                self.report.extend(paragraphs[counter:])
-            else:
-                logging.warning("{0},{1} has no paragraphs".format(
-                    self.id,
-                    self._date))
-
+            j = 0
+            for i,para in enumerate(paragraphs):
+                current_slide = "\n".join(paragraphs[j:i])
+                if len(current_slide) > 2200:
+                    current_slide.rstrip(paragraphs[i])
+                    self.report.append(current_slide)
+                    j = i
 
     def validate_id(self, pid):
         if len(pid) != 6:

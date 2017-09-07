@@ -46,7 +46,7 @@ def build_report_slide(prs, missionary, report, report_split):
 
     logging.info("Added report slide for {0}:{1}".format(missionary.id,
                                                          report.round))
-    return success
+    return
 
 
 def insert_bio(slide, missionary, report):

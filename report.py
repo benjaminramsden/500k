@@ -47,7 +47,9 @@ class Report(object):
         else:
             logging.info("Splitting into several slides {0}".format(self.id))
             paragraphs = report.splitlines()
-            if len(paragraphs) > 1:
+            if len(paragraphs) == 1:
+                self.report = [paragraphs[0]]
+            elif len(paragraphs) > 1:
                 temp = paragraphs[0]
                 self.report = [temp]
                 counter = 1

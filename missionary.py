@@ -11,7 +11,9 @@ class Person(object):
     def __init__(self, first_name=None):
         super(Person, self).__init__()
         if first_name:
-            self.first_name = first_name.title()
+            self.first_name = first_name.rstrip('\r').title()
+        else:
+            self.first_name = ""
 
 
 class Adult(Person):

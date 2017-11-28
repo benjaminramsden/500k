@@ -13,6 +13,7 @@ class Report(object):
         self.set_date(date, pid)
         self.name = name
         self.validate_id(pid)
+        self.report = []
         self.add_reports(report)
 
     def set_date(self, date, pid):
@@ -43,15 +44,17 @@ class Report(object):
         if len(report) < 2200:
             self.report = [report]
         else:
-            logging.info("Splitting into several slides {0}".format(self.id))
-            paragraphs = report.splitlines()
+            paragraphs = filter(None, report.splitlines())
             j = 0
-            for i,para in enumerate(paragraphs):
-                current_slide = "\n".join(paragraphs[j:i])
+            for i, para in enumerate(paragraphs):
+                current_slide = "\n".join(paragraphs[j:i+1])
                 if len(current_slide) > 2200:
+                    logging.info("Splitting into several slides {0}".format(self.id))
                     current_slide.rstrip(paragraphs[i])
                     self.report.append(current_slide)
                     j = i
+                if i == len(paragraphs)-1:
+                    self.report.append(paragraphs[j:])
 
     def validate_id(self, pid):
         if len(pid) != 6:
